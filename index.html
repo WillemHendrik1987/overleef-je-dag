@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Overleef je dag</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@1,9..144,500&display=swap">
+<style>
+:root{
+  --bg:#0B0E14;--bg2:#121722;--card:#171D2A;--line:#263045;--ink:#F3EFE7;--ink2:#A9B0BF;--ink3:#6F7789;
+  --accent:#FF5A36;--accent2:#FFB547;--ok:#3DDC97;--okbg:rgba(61,220,151,.12);--warn:#FFB547;--warnbg:rgba(255,181,71,.12);
+  --display:"Bricolage Grotesque","Arial Narrow",sans-serif;--body:"Manrope",system-ui,sans-serif;--serif:"Fraunces",Georgia,serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;overflow-x:hidden}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--accent2);outline-offset:3px}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px 48px}
+h1,h2,h3{font-family:var(--display);margin:0;letter-spacing:-.02em;line-height:1.02;text-wrap:balance}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3)}
+
+/* ---------- dagbalk ---------- */
+.day{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:14px 2px 10px}
+.clock small{display:block;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.clock b{font-family:var(--display);font-size:34px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.meter{text-align:right}
+.meter small{display:block;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.meter b{font-family:var(--display);font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent)}
+.meter b.bump{animation:bump .6s}
+@keyframes bump{30%{transform:scale(1.18)}}
+.track{display:flex;gap:4px;margin-bottom:10px}
+.track i{flex:1;height:4px;border-radius:2px;background:var(--line)}
+.track i.done{background:var(--ink2)}.track i.now{background:var(--accent)}
+
+/* ---------- podium ---------- */
+.stage{position:relative;width:100%;aspect-ratio:4/5;border-radius:22px;overflow:hidden;background:#000;box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.04);user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;cursor:pointer;touch-action:manipulation}
+.rig{position:absolute;inset:0;transform-origin:50% 50%}
+.cam{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:0 0;will-change:transform}
+.plate{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .9s ease}
+.plate.on{opacity:1}
+.plate.snap{transition:none}
+.grade{position:absolute;inset:0;pointer-events:none;transition:background 1.2s,opacity 1.2s;mix-blend-mode:multiply}
+#cam{transition:filter 1.2s}
+.stage.pov #cam{filter:saturate(.45) contrast(1.08) brightness(.92)}
+.stage.hitgrade #cam{filter:saturate(1.25) contrast(1.15)}
+canvas.fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.emerg{position:absolute;inset:0;pointer-events:none;opacity:0;mix-blend-mode:screen;transition:opacity 1.5s}
+.emerg.on{opacity:1;animation:emerg 1s steps(1) infinite}
+@keyframes emerg{0%{background:radial-gradient(120% 80% at 0% 30%,rgba(40,90,255,.55),transparent 60%)}50%{background:radial-gradient(120% 80% at 100% 30%,rgba(40,90,255,.45),transparent 60%)}}
+.firelight{position:absolute;inset:0;pointer-events:none;opacity:0;mix-blend-mode:screen;background:radial-gradient(90% 70% at 35% 35%,rgba(255,120,30,.55),transparent 65%);transition:opacity 1.5s}
+.firelight.on{opacity:1;animation:flick .18s infinite alternate}
+@keyframes flick{to{filter:brightness(1.25)}}
+.vign{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,transparent 50%,rgba(0,0,0,.55) 100%);transition:background 1.4s}
+.stage.pov .vign{background:radial-gradient(ellipse at 50% 40%,transparent 22%,rgba(10,0,0,.88) 78%)}
+.grain{position:absolute;inset:-50%;pointer-events:none;opacity:.09;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");animation:grain .5s steps(4) infinite}
+@keyframes grain{25%{transform:translate(-3%,2%)}50%{transform:translate(2%,-3%)}75%{transform:translate(-2%,-2%)}}
+.bars{position:absolute;left:0;right:0;height:0;background:#000;z-index:3;transition:height .7s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+.bars.t{top:0}.bars.b{bottom:0}
+.stage.cine .bars{height:9%}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4}
+.flash.go{animation:flash .45s ease-out}
+@keyframes flash{0%{opacity:.95}100%{opacity:0}}
+.stage.chroma #cam{animation:chroma .5s}
+@keyframes chroma{0%,100%{filter:none}30%{filter:drop-shadow(6px 0 0 rgba(255,0,60,.6)) drop-shadow(-6px 0 0 rgba(0,200,255,.6))}}
+.word{position:absolute;left:50%;top:34%;z-index:5;pointer-events:none;font-family:var(--display);font-weight:800;font-size:clamp(56px,17vw,104px);color:#fff;letter-spacing:-.03em;-webkit-text-stroke:3px #111;paint-order:stroke fill;text-shadow:8px 8px 0 var(--accent);transform:translate(-50%,-50%) rotate(-7deg) scale(.2);opacity:0}
+.word.go{animation:word 1.9s cubic-bezier(.2,1.5,.35,1) forwards}
+@keyframes word{0%{opacity:0;transform:translate(-50%,-50%) rotate(-7deg) scale(.2)}12%{opacity:1;transform:translate(-50%,-50%) rotate(-7deg) scale(1.08)}22%{transform:translate(-50%,-50%) rotate(-7deg) scale(1)}78%{opacity:1}100%{opacity:0;transform:translate(-50%,-56%) rotate(-7deg) scale(1.04)}}
+.money{position:absolute;left:0;right:0;text-align:center;top:50%;z-index:5;font-family:var(--display);font-weight:800;font-size:30px;color:var(--accent);text-shadow:0 2px 12px rgba(0,0,0,.8);pointer-events:none;animation:money 2.2s ease-out forwards}
+@keyframes money{0%{opacity:0;transform:translateY(20px)}15%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0;transform:translateY(-30px)}}
+
+/* ondertitels */
+.sub{position:absolute;left:5%;right:5%;bottom:11%;z-index:6;pointer-events:none;text-align:center}
+.sub .line{display:inline-block;background:rgba(6,8,12,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:12px;padding:10px 14px 11px;font-size:16.5px;font-weight:600;line-height:1.38;max-width:100%;animation:subin .35s ease both}
+.sub .who{display:block;font-family:var(--display);font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin-bottom:3px}
+.sub .who.hero{color:var(--accent2)}.sub .who.npc{color:#8EC5FF}
+.sub .line.narr{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;font-family:var(--serif);font-style:italic;font-weight:500;font-size:19px;text-shadow:0 2px 14px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.9)}
+@keyframes subin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.tap{position:absolute;right:14px;bottom:14px;z-index:7;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.75);display:flex;align-items:center;gap:6px;opacity:0;transition:opacity .4s;pointer-events:none}
+.tap.on{opacity:1}
+.tap i{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{transform:scale(1.6);opacity:.4}}
+
+/* titelkaart */
+.tcard{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#000;pointer-events:none;opacity:0;transition:opacity .8s}
+.tcard.on{opacity:1}
+.tcard .tm{font-family:var(--display);font-weight:800;font-size:clamp(60px,20vw,120px);letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:.9}
+.tcard .pl{font-family:var(--serif);font-style:italic;font-size:22px;color:var(--ink2);margin-top:8px}
+.tcard .tm span{display:inline-block;animation:tin .6s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes tin{from{opacity:0;transform:translateY(30px)}}
+
+/* risico spotten */
+.spotui{position:absolute;left:0;right:0;top:9%;z-index:6;text-align:center;pointer-events:none;opacity:0;transition:opacity .4s}
+.spotui.on{opacity:1}
+.spotui .q{display:inline-block;background:var(--accent);color:#fff;font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:.02em;padding:8px 14px;border-radius:999px;box-shadow:0 8px 24px rgba(255,90,54,.4)}
+.spotui .timer{height:3px;width:52%;margin:8px auto 0;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden}
+.spotui .timer i{display:block;height:100%;background:#fff;width:100%;transform-origin:0 50%}
+.ring{position:absolute;z-index:6;width:90px;height:90px;margin:-45px 0 0 -45px;border-radius:50%;border:3px solid #fff;pointer-events:none;animation:ring .9s ease-out forwards}
+.ring.ok{border-color:var(--ok);box-shadow:0 0 30px var(--ok)}
+.ring.no{border-color:var(--accent);width:44px;height:44px;margin:-22px 0 0 -22px}
+.ring.reveal{border-color:var(--accent2);animation:ringr 1.4s ease-in-out 2}
+@keyframes ring{from{transform:scale(.3);opacity:1}to{transform:scale(1.4);opacity:0}}
+@keyframes ringr{0%,100%{transform:scale(.9);opacity:1}50%{transform:scale(1.25);opacity:.6}}
+.toastin{position:absolute;left:50%;top:20%;z-index:7;transform:translateX(-50%);font-family:var(--display);font-weight:800;font-size:18px;padding:8px 14px;border-radius:999px;pointer-events:none;animation:subin .3s both;white-space:nowrap}
+.toastin.ok{background:var(--ok);color:#06281A}.toastin.no{background:#2A1A16;color:var(--accent2);border:1px solid var(--accent2)}
+
+/* POV */
+.povtxt{position:absolute;left:7%;right:7%;bottom:14%;z-index:6;text-align:center;font-family:var(--serif);font-style:italic;font-weight:500;font-size:clamp(22px,6.4vw,30px);line-height:1.22;color:#fff;text-shadow:0 2px 24px rgba(0,0,0,1);pointer-events:none;text-wrap:balance}
+.povlbl{position:absolute;top:11%;left:0;right:0;text-align:center;z-index:6;font-size:10px;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.55);pointer-events:none}
+.mute{position:absolute;top:12px;right:12px;z-index:9;width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);color:#fff;display:grid;place-items:center}
+.mute svg{width:18px;height:18px}
+
+/* ---------- paneel & quiz ---------- */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;margin-top:14px;animation:subin .4s both}
+.panel h2{font-size:clamp(22px,6vw,28px);font-weight:800;margin:6px 0 8px}
+.panel .sit{color:var(--ink2);margin:0 0 14px;font-size:15px}
+.choices{display:grid;gap:8px}
+.choice{display:flex;gap:12px;align-items:center;text-align:left;background:var(--bg2);border:1.5px solid var(--line);border-radius:14px;padding:13px 14px;color:var(--ink);font-size:15px;font-weight:700;line-height:1.3;transition:border-color .15s,transform .15s}
+.choice:hover{border-color:var(--ink2);transform:translateX(3px)}
+.choice .k{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--line);font-family:var(--display);font-weight:800}
+.choice.right{border-color:var(--ok);background:var(--okbg)}.choice.right .k{background:var(--ok);color:#06281A}
+.choice.wrong{border-color:var(--accent);background:rgba(255,90,54,.1);animation:shake .4s}.choice.wrong .k{background:var(--accent)}
+.choice:disabled{cursor:default;transform:none}
+@keyframes shake{25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+.outcome{margin-top:12px;border-radius:16px;padding:15px;animation:subin .35s both}
+.outcome.covered{background:var(--okbg);border-left:4px solid var(--ok)}
+.outcome.none{background:var(--warnbg);border-left:4px solid var(--warn)}
+.outcome .tag{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.covered .tag{color:var(--ok)}.none .tag{color:var(--warn)}
+.tag .chip{background:rgba(255,255,255,.08);color:var(--ink);padding:3px 8px;border-radius:999px;letter-spacing:.06em}
+.outcome p{margin:0 0 8px;font-size:15px}
+.pol{display:inline-block;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:5px 11px;font-size:13px;font-weight:800}
+.why{font-size:14.5px;color:var(--ink2);line-height:1.55;margin-top:10px}
+.btn{display:block;width:100%;margin-top:12px;border:0;border-radius:14px;padding:15px;font-size:16px;font-weight:800;background:var(--ink);color:var(--bg)}
+.btn.hot{background:var(--accent);color:#fff}
+.btn:disabled{opacity:.35}
+
+/* ---------- start ---------- */
+.hero{padding:26px 0 6px}
+.hero .eyebrow{color:var(--accent2)}
+.hero h1{font-size:clamp(52px,15vw,92px);font-weight:800;line-height:.9;margin-top:8px}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{color:var(--ink2);font-size:16px;line-height:1.5;margin:12px 0 0;max-width:30em}
+.picks{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+.pick{position:relative;border:1.5px solid var(--line);background:var(--card);border-radius:18px;overflow:hidden;padding:0;text-align:left;color:var(--ink);aspect-ratio:4/5;transition:transform .2s,border-color .2s}
+.pick img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.9);transition:transform .6s}
+.pick:hover img,.pick.sel img{transform:scale(2.05)}
+.pick .ov{position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.85))}
+.pick .nm{position:absolute;left:12px;right:12px;bottom:11px}
+.pick b{display:block;font-family:var(--display);font-size:22px;font-weight:800}
+.pick span{font-size:12px;color:var(--ink2);font-weight:600}
+.pick.sel{border-color:var(--accent);transform:translateY(-3px)}
+.pick.soon{opacity:.45;cursor:not-allowed}
+.pick .badge{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.6);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:4px 8px;border-radius:999px}
+.fine{font-size:12px;color:var(--ink3);margin-top:16px;line-height:1.5}
+
+/* ---------- einde ---------- */
+.totals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.tot{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:11px}
+.tot small{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.tot b{display:block;white-space:nowrap;font-family:var(--display);font-size:clamp(15px,4.6vw,22px);font-weight:800;font-variant-numeric:tabular-nums}
+.tot.g b{color:var(--ok)}.tot.a b{color:var(--accent2)}
+.list{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:6px}
+.list li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:var(--bg2);border-radius:12px;padding:9px 12px;font-size:14px}
+.list .t{font-family:var(--display);font-weight:800;font-size:12px;color:var(--ink3)}
+.list .d b{display:block}.list .d span{color:var(--ink2);font-size:12.5px}
+.list .a{font-family:var(--display);font-weight:800}
+.list li.covered .a{color:var(--ok)}.list li.none .a{color:var(--warn)}
+.cta{display:block;text-align:center;margin-top:14px;border-radius:14px;padding:15px;font-size:16px;font-weight:800;background:var(--accent);color:#fff;text-decoration:none}
+.row{display:flex;gap:10px;margin-top:10px}
+.ghost{flex:1;border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:14px;padding:12px;font-weight:800}
+@media (prefers-reduced-motion:reduce){.grain,.emerg.on,.firelight.on{animation:none}}
+</style>
+</head>
+<body>
+<div id="app" class="wrap"></div>
+<script id="avail">window.OJD_AVAIL=["georges0A", "georges0B", "georges1A", "georges1B", "georges2A", "georges2B", "georges3A", "georges3B", "georges4A", "georges4B", "group", "lien0A", "lien0B", "lien1A", "lien1B", "lien2A", "lien2B", "lien3A", "lien3B", "lien4A", "lien4B", "noor0A", "noor0B", "noor1A", "noor1B", "noor2A", "noor2B", "noor3A", "noor3B", "noor4A", "noor4B", "sam0A", "sam0B", "sam1A", "sam1B", "sam2A", "sam2B", "sam3A", "sam3B", "sam4A", "sam4B"];</script>
+<script>
+/* =====================================================================
+   OVERLEEF JE DAG — interactieve motion comic voor hanze.be
+   Elke scène = twee volledig geïllustreerde beelden (A: aanloop, B: gevolg).
+   De motor doet de "regie": camera, montage, licht, deeltjes en geluid.
+   ===================================================================== */
+const ASSET='assets/';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const ease={io:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,out:t=>1-Math.pow(1-t,3),in:t=>t*t*t,lin:t=>t};
+
+/* ===================== AUDIO =====================
+   Drie bussen: muziek (met lowpass voor "gedempt"), ambiance en effecten.
+   Effecten gaan deels door een galm (convolver) voor diepte. */
+const AU={ctx:null,muted:false,tracks:{},cur:null};
+try{AU.muted=localStorage.getItem('ojd-mute')==='1'}catch(e){}
+function audioInit(){
+  if(AU.ctx){if(AU.ctx.state==='suspended')AU.ctx.resume();return AU.ctx;}
+  const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;
+  const c=AU.ctx=new C();
+  AU.master=c.createGain();AU.master.gain.value=AU.muted?0:1;
+  AU.comp=c.createDynamicsCompressor();AU.comp.threshold.value=-14;AU.comp.ratio.value=3;
+  AU.master.connect(AU.comp).connect(c.destination);
+  AU.musLP=c.createBiquadFilter();AU.musLP.type='lowpass';AU.musLP.frequency.value=20000;
+  AU.mus=c.createGain();AU.mus.gain.value=.55;AU.musLP.connect(AU.mus).connect(AU.master);
+  AU.ambLP=c.createBiquadFilter();AU.ambLP.type='lowpass';AU.ambLP.frequency.value=20000;
+  AU.amb=c.createGain();AU.amb.gain.value=.5;AU.ambLP.connect(AU.amb).connect(AU.master);
+  AU.fx=c.createGain();AU.fx.gain.value=.9;AU.fx.connect(AU.master);
+  AU.rev=c.createConvolver();AU.rev.buffer=impulse(2.6,2.4);AU.revG=c.createGain();AU.revG.gain.value=.35;AU.rev.connect(AU.revG).connect(AU.master);
+  AU.noise=noiseBuf(2);
+  return c;
+}
+function impulse(sec,decay){const c=AU.ctx,n=c.sampleRate*sec,b=c.createBuffer(2,n,c.sampleRate);for(let ch=0;ch<2;ch++){const d=b.getChannelData(ch);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,decay);}return b;}
+function noiseBuf(sec){const c=AU.ctx,n=c.sampleRate*sec,b=c.createBuffer(1,n,c.sampleRate),d=b.getChannelData(0);let last=0;for(let i=0;i<n;i++){d[i]=Math.random()*2-1;}return b;}
+function out(node,wet=.25,pan=0){const c=AU.ctx;let n=node;if(pan&&c.createStereoPanner){const p=c.createStereoPanner();p.pan.value=pan;n.connect(p);n=p;}n.connect(AU.fx);if(wet>0){const s=c.createGain();s.gain.value=wet;n.connect(s);s.connect(AU.rev);}}
+function env(g,t,a,peak,d){peak=Math.max(peak||0,.0002);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+a+d);}
+function nz(dur,type,freq,q,peak,{t=0,a=.005,wet=.25,pan=0,sweep=null}={}){const c=AU.ctx;if(!c)return;const T=c.currentTime+t;const s=c.createBufferSource();s.buffer=AU.noise;s.loop=true;const f=c.createBiquadFilter();f.type=type;f.frequency.setValueAtTime(freq,T);if(sweep)f.frequency.exponentialRampToValueAtTime(sweep,T+dur);f.Q.value=q;const g=c.createGain();env(g,T,a,peak,dur);s.connect(f).connect(g);out(g,wet,pan);s.start(T,Math.random()*1.5);s.stop(T+a+dur+.05);}
+function osc(type,f0,f1,dur,peak,{t=0,a=.005,wet=.2,pan=0}={}){const c=AU.ctx;if(!c)return;const T=c.currentTime+t;const o=c.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,T);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),T+a+dur);const g=c.createGain();env(g,T,a,peak,dur);o.connect(g);out(g,wet,pan);o.start(T);o.stop(T+a+dur+.05);}
+
+const SFX={
+  tap(){osc('sine',1200,900,.04,.04,{wet:0})},
+  boom(){osc('sine',110,32,1.4,.9,{wet:.1});nz(.5,'lowpass',900,.7,.6,{wet:.3});nz(1.6,'lowpass',200,.5,.35,{t:.05,wet:.5})},
+  riser(sec=1.6){const c=AU.ctx;if(!c)return;nz(sec,'bandpass',300,1.2,.18,{a:sec*.9,sweep:5000,wet:.2});osc('sawtooth',90,420,sec,.05,{a:sec*.9,wet:.2});},
+  whoosh(){nz(.55,'bandpass',500,1.4,.35,{a:.2,sweep:3500,wet:.15})},
+  glass(){for(let i=0;i<26;i++){const f=2400+Math.random()*7000;nz(.06+Math.random()*.25,'bandpass',f,18,.22*Math.random()+.05,{t:Math.random()*.5,wet:.35,pan:Math.random()*1.6-.8});}nz(.4,'highpass',3000,.5,.4,{wet:.3});},
+  water(){nz(2.6,'bandpass',600,.6,.35,{a:.4,wet:.3});nz(2.2,'lowpass',380,.4,.3,{t:.2,a:.6,wet:.3});for(let i=0;i<14;i++)osc('sine',900+Math.random()*900,300,.08,.05,{t:Math.random()*2,wet:.3});},
+  splash(){nz(.8,'bandpass',900,.7,.45,{wet:.35});nz(.5,'lowpass',500,.6,.3,{t:.08,wet:.3})},
+  thud(){osc('sine',150,45,.35,.7,{wet:.15});nz(.18,'lowpass',500,.6,.45,{wet:.15})},
+  metal(){[520,1270,2150,3320].forEach((f,i)=>osc('triangle',f,f*.98,1.2-i*.2,.14,{wet:.4}));nz(.2,'highpass',2500,.7,.3,{wet:.2})},
+  crash(){SFX.boom();SFX.metal();SFX.glass()},
+  buzz(){for(let i=0;i<3;i++){osc('square',150,150,.22,.06,{t:i*.35,wet:0});nz(.22,'bandpass',300,3,.08,{t:i*.35,wet:0});}},
+  ping(){osc('sine',1568,1568,.18,.12,{wet:.2});osc('sine',2093,2093,.25,.08,{t:.08,wet:.2})},
+  pings(n=8){for(let i=0;i<n;i++){const f=[1319,1568,1760,2093][i%4];osc('sine',f,f,.15,.07,{t:i*.18+Math.random()*.06,wet:.15,pan:Math.random()-.5});}},
+  ring(){for(let k=0;k<2;k++)for(let i=0;i<10;i++)osc('sine',i%2?1400:1250,i%2?1400:1250,.045,.12,{t:k*.9+i*.05,wet:.15});},
+  bark(){[0,.22].forEach(t=>{nz(.12,'bandpass',800,2,.4,{t,wet:.2});osc('sawtooth',460,240,.12,.18,{t,wet:.2});})},
+  fire(){nz(3,'lowpass',700,.5,.4,{a:.8,wet:.3});for(let i=0;i<30;i++)nz(.03,'highpass',2500,.7,.25*Math.random(),{t:Math.random()*3,wet:.2});},
+  gasp(){nz(.7,'bandpass',1400,1.2,.18,{a:.15,wet:.3})},
+  slap(){nz(.08,'highpass',1800,.6,.5,{wet:.2});osc('sine',300,90,.12,.3,{wet:.1})},
+  ok(){osc('sine',660,660,.16,.16,{wet:.25});osc('sine',990,990,.3,.14,{t:.1,wet:.3})},
+  wrong(){osc('triangle',220,170,.35,.16,{wet:.2})},
+  cash(){[880,1175,1568].forEach((f,i)=>osc('triangle',f,f,.12,.08,{t:.35+i*.06,wet:.2}))},
+  spot(){osc('sine',880,1760,.25,.12,{wet:.3});osc('sine',1320,2640,.3,.08,{t:.06,wet:.3})},
+  tinnitus(sec=3){const c=AU.ctx;if(!c)return;const T=c.currentTime;const o=c.createOscillator();o.frequency.value=3900;const g=c.createGain();g.gain.setValueAtTime(.0001,T);g.gain.exponentialRampToValueAtTime(.035,T+.25);g.gain.exponentialRampToValueAtTime(.0001,T+sec);o.connect(g).connect(AU.master);o.start(T);o.stop(T+sec+.1);}
+};
+/* sirene: Belgische twee-tonen (hoog/laag) met doppler en panning */
+function siren(kind='ambulance',sec=8){const c=AU.ctx;if(!c||AU.muted)return;const T=c.currentTime;const o=c.createOscillator();o.type='square';const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2200;const g=c.createGain();const p=c.createStereoPanner?c.createStereoPanner():null;
+  const hi=kind==='brandweer'?520:660,lo=kind==='brandweer'?390:495,per=kind==='brandweer'?.9:.62;
+  for(let t=0;t<sec;t+=per){const k=t/sec;const dop=1.04-k*.08;o.frequency.setValueAtTime(hi*dop,T+t);o.frequency.setValueAtTime(lo*dop,T+t+per/2);}
+  g.gain.setValueAtTime(.0001,T);g.gain.exponentialRampToValueAtTime(.12,T+sec*.55);g.gain.setValueAtTime(.12,T+sec*.75);g.gain.exponentialRampToValueAtTime(.0001,T+sec);
+  if(p){p.pan.setValueAtTime(.9,T);p.pan.linearRampToValueAtTime(-.2,T+sec);o.connect(lp).connect(g).connect(p);p.connect(AU.master);const s=c.createGain();s.gain.value=.4;p.connect(s);s.connect(AU.rev);}else{o.connect(lp).connect(g).connect(AU.master);}
+  o.start(T);o.stop(T+sec+.1);}
+let HEART=null;function heartbeat(on){if(HEART){clearInterval(HEART);HEART=null;}if(!on||!AU.ctx)return;const b=()=>{osc('sine',62,40,.16,.55,{wet:0});osc('sine',58,38,.14,.38,{t:.22,wet:0});};b();HEART=setInterval(b,980);}
+
+/* ambiance: geluidsbed per locatie (ruis door filters + losse gebeurtenissen) */
+const AMB={nodes:[],timers:[]};
+function ambStop(){AMB.timers.forEach(clearInterval);AMB.timers=[];AMB.nodes.forEach(n=>{try{n.stop()}catch(e){}});AMB.nodes=[];}
+function bed(type,freq,q,vol,lfo=0){const c=AU.ctx;const s=c.createBufferSource();s.buffer=AU.noise;s.loop=true;const f=c.createBiquadFilter();f.type=type;f.frequency.value=freq;f.Q.value=q;const g=c.createGain();g.gain.value=0;g.gain.linearRampToValueAtTime(vol,c.currentTime+2);s.connect(f).connect(g).connect(AU.ambLP);if(lfo){const l=c.createOscillator();l.frequency.value=lfo;const lg=c.createGain();lg.gain.value=vol*.6;l.connect(lg).connect(g.gain);l.start();AMB.nodes.push(l);}s.start();AMB.nodes.push(s);}
+function every(ms,fn){AMB.timers.push(setInterval(()=>{if(!AU.muted&&AU.ctx)fn();},ms));}
+function ambient(kind){ambStop();if(!AU.ctx)return;const birds=()=>{const b=2400+Math.random()*1800;const t=Math.random()*.6;osc('sine',b,b*1.25,.07,.025,{t,wet:.4,pan:Math.random()*1.6-.8});osc('sine',b*1.1,b*.9,.09,.02,{t:t+.12,wet:.4});};
+  switch(kind){
+    case'apt':bed('lowpass',180,.5,.05);bed('bandpass',100,8,.012);every(5200,()=>nz(2,'lowpass',300,.5,.03,{a:.8,wet:.2}));break;
+    case'street':bed('lowpass',260,.5,.08,.07);every(2600,birds);every(7000,()=>nz(2.6,'bandpass',700,.6,.05,{a:1.1,wet:.25,pan:Math.random()-.5}));break;
+    case'school':bed('bandpass',900,.5,.05,.4);bed('lowpass',240,.5,.05);every(1900,()=>nz(.4,'bandpass',1500+Math.random()*1200,3,.03,{t:Math.random(),wet:.35,pan:Math.random()*1.4-.7}));every(3100,birds);break;
+    case'canteen':bed('bandpass',800,.6,.08,.3);every(900,()=>{const f=3000+Math.random()*2500;osc('sine',f,f,.05,.02,{t:Math.random()*.5,wet:.35,pan:Math.random()-.5});});break;
+    case'cafe':bed('bandpass',650,.6,.08,.25);every(1300,()=>{const f=2600+Math.random()*2400;osc('triangle',f,f*.99,.08,.02,{t:Math.random()*.7,wet:.4,pan:Math.random()-.5});});break;
+    case'night':bed('lowpass',150,.5,.04);every(1400,()=>{osc('sine',4200,4200,.03,.012,{wet:.3});osc('sine',4200,4200,.03,.012,{t:.1,wet:.3});});break;
+    case'park':bed('lowpass',320,.4,.06,.05);every(2200,birds);break;
+    case'rain':bed('highpass',1800,.4,.06);bed('lowpass',400,.5,.05);break;
+  }}
+/* muziek: echte orkestrale tracks, met cross-fade en "gedempt" (lowpass) voor POV/impact */
+function music(name,vol=.55,fade=1.5){if(!AU.ctx)return;const c=AU.ctx;if(AU.cur===name)return;const T=c.currentTime;
+  if(AU.cur&&AU.tracks[AU.cur]){const o=AU.tracks[AU.cur];o.g.gain.cancelScheduledValues(T);o.g.gain.setValueAtTime(o.g.gain.value,T);o.g.gain.linearRampToValueAtTime(0,T+fade);const el=o.el;setTimeout(()=>{if(AU.cur!==o.name)el.pause();},fade*1000+100);}
+  AU.cur=name;if(!name)return;
+  let t=AU.tracks[name];if(!t){const el=new Audio(ASSET+name+'.mp3');el.loop=true;el.preload='auto';const src=c.createMediaElementSource(el);const g=c.createGain();g.gain.value=0;src.connect(g).connect(AU.musLP);t=AU.tracks[name]={el,g,name};}
+  t.el.currentTime=0;t.el.play().catch(()=>{});t.g.gain.cancelScheduledValues(T);t.g.gain.setValueAtTime(0,T);t.g.gain.linearRampToValueAtTime(vol,T+fade);}
+function musicStop(fade=.15){music(null,0,fade);}
+function muffle(on,f=420){if(!AU.ctx)return;const T=AU.ctx.currentTime;[AU.musLP,AU.ambLP].forEach(n=>{n.frequency.cancelScheduledValues(T);n.frequency.setValueAtTime(n.frequency.value,T);n.frequency.exponentialRampToValueAtTime(on?f:20000,T+(on?.25:2.5));});}
+function duck(v,t=.5){if(!AU.ctx)return;const T=AU.ctx.currentTime;AU.mus.gain.cancelScheduledValues(T);AU.mus.gain.setValueAtTime(AU.mus.gain.value,T);AU.mus.gain.linearRampToValueAtTime(v,T+t);}
+function setMute(m){AU.muted=m;try{localStorage.setItem('ojd-mute',m?'1':'0')}catch(e){}if(AU.master)AU.master.gain.value=m?0:1;}
+const muteIcon=()=>AU.muted?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9l5 6M21 9l-5 6"/></svg>`:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8a5 5 0 010 8M18.5 5.5a9 9 0 010 13"/></svg>`;
+
+/* ===================== CAMERA =====================
+   Camera = brandpunt (x,y in 0..1 van het beeld) + zoom z.
+   Elke frame: brandpunt naar het midden schuiven, schalen, plus "handheld" ademing en schok. */
+const CAM={x:.5,y:.5,z:1,shake:0,hand:1};let camTween=null;
+function camTo(x,y,z,dur=1600,e='io'){const f={x:CAM.x,y:CAM.y,z:CAM.z};return new Promise(res=>{camTween={f,t:{x,y,z},t0:performance.now(),dur,e:ease[e],res};});}
+function camSet(x,y,z){camTween=null;Object.assign(CAM,{x,y,z});}
+const S={};/* stage-refs */
+function frame(now){requestAnimationFrame(frame);
+  if(camTween){const k=Math.min(1,(now-camTween.t0)/camTween.dur),v=camTween.e(k);for(const p of['x','y','z'])CAM[p]=camTween.f[p]+(camTween.t[p]-camTween.f[p])*v;if(k>=1){const r=camTween.res;camTween=null;r();}}
+  if(!S.cam||!S.cam.isConnected)return;
+  const W=S.stage.clientWidth,H=S.stage.clientHeight,z=Math.max(1,CAM.z);
+  const t=now/1000,hx=(Math.sin(t*.53)*.0035+Math.sin(t*1.37)*.0016)*CAM.hand,hy=(Math.sin(t*.71+1)*.003+Math.sin(t*1.9)*.0012)*CAM.hand;
+  const x=clamp(CAM.x+hx,.5/z,1-.5/z),y=clamp(CAM.y+hy,.5/z,1-.5/z);
+  let sx=0,sy=0,rot=0;if(CAM.shake>.3){sx=(Math.random()-.5)*CAM.shake;sy=(Math.random()-.5)*CAM.shake;rot=(Math.random()-.5)*CAM.shake*.05;CAM.shake*=.9;}else CAM.shake=0;
+  S.T={x:W/2-x*W*z,y:H/2-y*H*z,z,W,H};
+  S.cam.style.transform=`translate3d(${S.T.x}px,${S.T.y}px,0) scale(${z})`;
+  S.rig.style.transform=`translate3d(${sx}px,${sy}px,0) rotate(${rot}deg)`;
+  FX.step(now);
+}
+requestAnimationFrame(frame);
+/* beeld-coördinaat → schermcoördinaat (voor ringen en deeltjes) */
+function toScreen(ix,iy){const T=S.T;return T?{x:T.x+ix*T.W*T.z,y:T.y+iy*T.H*T.z}:{x:0,y:0};}
+function toImage(px,py){const T=S.T;return {x:(px-T.x)/(T.W*T.z),y:(py-T.y)/(T.H*T.z)};}
+
+/* ===================== DEELTJES =====================
+   Eén canvas, verschillende systemen: stofjes in het licht, regen, druppels, glas, rook, vonken, bladeren. */
+const FX={ps:[],mode:[],last:0,
+  setup(){const c=S.fx;const dpr=Math.min(2,window.devicePixelRatio||1);c.width=S.stage.clientWidth*dpr;c.height=S.stage.clientHeight*dpr;this.ctx=c.getContext('2d');this.ctx.setTransform(dpr,0,0,dpr,0,0);this.ps=[];},
+  set(modes){this.mode=modes||[];},
+  burst(kind,ix,iy,n=40){const p=toScreen(ix,iy);for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=2+Math.random()*9;
+      if(kind==='glass')this.ps.push({k:'shard',x:p.x,y:p.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-4,r:3+Math.random()*7,rot:Math.random()*6,vr:(Math.random()-.5)*.5,life:1,dl:.012+Math.random()*.01});
+      if(kind==='splash')this.ps.push({k:'drop',x:p.x,y:p.y,vx:Math.cos(a)*s*.7,vy:-Math.abs(Math.sin(a)*s)-2,r:2+Math.random()*3,life:1,dl:.02});
+      if(kind==='spark')this.ps.push({k:'spark',x:p.x,y:p.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-3,r:1.5+Math.random()*2,life:1,dl:.025});
+      if(kind==='dust')this.ps.push({k:'puff',x:p.x,y:p.y,vx:Math.cos(a)*s*.3,vy:-Math.random()*1.5,r:12+Math.random()*20,life:1,dl:.012});}},
+  step(now){const c=this.ctx;if(!c)return;const W=S.stage.clientWidth,H=S.stage.clientHeight;c.clearRect(0,0,W,H);
+    for(const m of this.mode){
+      if(m==='motes'&&Math.random()<.25)this.ps.push({k:'mote',x:Math.random()*W,y:H*(.2+Math.random()*.7),vx:(Math.random()-.5)*.15,vy:-.1-Math.random()*.2,r:.8+Math.random()*1.8,life:1,dl:.003});
+      if(m==='rain')for(let i=0;i<4;i++)this.ps.push({k:'rain',x:Math.random()*W*1.2,y:-20,vx:-3,vy:16+Math.random()*6,life:1,dl:.02});
+      if(m==='drip'&&Math.random()<.18)this.ps.push({k:'drop',x:W*(.25+Math.random()*.6),y:-5,vx:0,vy:4,r:1.5+Math.random()*1.5,life:1,dl:.006});
+      if(m==='smoke'&&Math.random()<.07)this.ps.push({k:'smoke',x:W*(.05+Math.random()*.5),y:H*(.18+Math.random()*.25),vx:.15+Math.random()*.35,vy:-.15-Math.random()*.25,r:40+Math.random()*50,life:1,dl:.0035});
+      if(m==='embers'&&Math.random()<.5)this.ps.push({k:'spark',x:W*(.2+Math.random()*.4),y:H*(.4+Math.random()*.15),vx:(Math.random()-.5)*1.2,vy:-1-Math.random()*2.5,r:1+Math.random()*1.6,life:1,dl:.008});
+      if(m==='leaves'&&Math.random()<.04)this.ps.push({k:'leaf',x:Math.random()*W,y:-10,vx:.4+Math.random()*.6,vy:.8+Math.random()*.6,r:4+Math.random()*4,rot:Math.random()*6,vr:.05,life:1,dl:.002});
+    }
+    for(let i=this.ps.length-1;i>=0;i--){const p=this.ps[i];p.x+=p.vx;p.y+=p.vy;p.life-=p.dl;
+      if(p.k==='shard'||p.k==='drop'||p.k==='spark'&&p.dl>.02){p.vy+=.35;}
+      if(p.k==='leaf'){p.vx+=Math.sin(now/400+i)*.02;p.rot+=p.vr;}
+      if(p.life<=0||p.y>H+40||p.x<-60||p.x>W+60){this.ps.splice(i,1);continue;}
+      c.globalAlpha=Math.max(0,Math.min(1,p.life));
+      if(p.k==='mote'){c.fillStyle='rgba(255,230,180,.75)';c.beginPath();c.arc(p.x,p.y,p.r,0,7);c.fill();}
+      else if(p.k==='rain'){c.strokeStyle='rgba(200,220,255,.35)';c.lineWidth=1.2;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p.x+p.vx*1.4,p.y+p.vy*1.4);c.stroke();}
+      else if(p.k==='drop'){c.fillStyle='rgba(190,225,255,.8)';c.beginPath();c.arc(p.x,p.y,p.r,0,7);c.fill();}
+      else if(p.k==='shard'){p.rot+=p.vr;c.save();c.translate(p.x,p.y);c.rotate(p.rot);c.fillStyle='rgba(230,245,255,.9)';c.strokeStyle='rgba(120,170,220,.9)';c.beginPath();c.moveTo(0,-p.r);c.lineTo(p.r*.7,p.r*.6);c.lineTo(-p.r*.5,p.r*.4);c.closePath();c.fill();c.stroke();c.restore();}
+      else if(p.k==='spark'){c.fillStyle='rgba(255,190,90,1)';c.shadowColor='#ff8a2a';c.shadowBlur=8;c.beginPath();c.arc(p.x,p.y,p.r,0,7);c.fill();c.shadowBlur=0;}
+      else if(p.k==='smoke'){const R=p.r*(2-p.life);c.globalAlpha=Math.min(.16,p.life*.2)*Math.min(1,(1-p.life)*6);const g=c.createRadialGradient(p.x,p.y,0,p.x,p.y,R);g.addColorStop(0,'rgba(28,26,30,1)');g.addColorStop(1,'rgba(28,26,30,0)');c.fillStyle=g;c.beginPath();c.arc(p.x,p.y,R,0,7);c.fill();}
+      else if(p.k==='puff'){c.globalAlpha=p.life*.4;c.fillStyle='rgba(220,210,190,1)';c.beginPath();c.arc(p.x,p.y,p.r*(2-p.life),0,7);c.fill();}
+      else if(p.k==='leaf'){c.save();c.translate(p.x,p.y);c.rotate(p.rot);c.fillStyle='rgba(110,140,50,.85)';c.beginPath();c.ellipse(0,0,p.r,p.r*.5,0,0,7);c.fill();c.restore();}
+    }c.globalAlpha=1;}
+};
+
+/* ===================== SPELDATA =====================
+   Per moment: twee beelden (A/B), gezichten (voor close-ups), het risico in beeld A (spot),
+   camera per beat, deeltjes, ambiance, geluidseffect van de klap. */
+const PROFILES=[
+ {id:'noor',name:'Noor',age:14,tag:'Scholier',blurb:'Fiets, gsm, scouts',portrait:['noor1A',.47,.22],
+  moments:[
+   {t:'08:10',h:0,where:'Speelplaats',place:'Speelplaats, Sint-Andries',img:'noor0',amb:'school',fx:{A:['motes'],B:['motes']},
+    face:{A:[.49,.28],B:[.32,.21],O:[.75,.55]},boomAt:[.75,.6],sfx:'thud',word:'AU!',cost:1350,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.85,.5,.16],[.89,.24,.1]],found:'Gespot: ze kijkt niet uit en Jonas loopt vlak voor haar.',missed:'Hier: Jonas loopt vlak voor haar, en zij kijkt niet uit.'},
+    beats:[
+      {n:'De bel is al gegaan. Noor is te laat. Weer.',cam:[.5,.45,1.08,4200]},
+      {h:'Aan de kant! Ik ben te laat!',cam:'faceA'},
+      {spot:1},
+      {hit:1,n:'Ze loopt Jonas vol omver. Zijn bril breekt. Een voortand ook.'},
+      {p:'Au… mijn tand. En mijn bril…',who:'Jonas',cam:'faceO'},
+      {n:'Tandarts en nieuwe bril: 1.350 euro.',cam:[.5,.55,1.06,3000]}
+    ],
+    pov:{lines:['Het wordt heel stil op de speelplaats.','Jonas houdt zijn mond vast. Er is bloed.','Iedereen kijkt naar jou.']},
+    ask:'De ouders van Jonas',q:'Wie betaalt de bril en de tand van Jonas?',
+    opts:['De schoolverzekering, punt','De familiale verzekering van Noors ouders','Niemand, de ouders van Noor betalen zelf'],a:1,pol:'Familiale verzekering',sur:true,
+    why:'De schoolverzekering betaalt vaak een deel van de medische kosten van het slachtoffer, ongeacht wie fout was, maar met plafonds, en een bril vaak maar beperkt of niet. Wat overblijft is schade die Noor aan iemand anders toebracht: dat is voor de familiale (BA privéleven) van haar ouders. Zonder familiale betalen de ouders het saldo zelf.'},
+   {t:'12:30',h:1,where:'Refter',place:'Refter, middagpauze',img:'noor1',amb:'canteen',fx:{A:['motes'],B:['motes']},
+    face:{A:[.47,.2],B:[.47,.37],O:null},boomAt:[.68,.86],sfx:'glass',word:'KRAK!',cost:290,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.53,.35,.11],[.32,.43,.1]],found:'Gespot: gsm in de ene hand, dienblad in de andere.',missed:'Hier: gsm in de ene hand, dienblad in de andere.'},
+    beats:[
+      {n:'Middagpauze. Rij voor de frietjes.',cam:[.5,.45,1.08,4000]},
+      {h:'Even kijken wie er geschreven heeft…',cam:'faceA'},
+      {spot:1},
+      {hit:1,n:'De gsm glipt uit haar hand. Scherm aan stukken: 290 euro.'},
+      {h:'Nee nee nee. Mama vermoordt me.',cam:'faceB'}
+    ],
+    pov:{lines:['Je raapt hem op. Het glas kraakt onder je duim.','Hoe ga je dit thuis vertellen?']},
+    ask:'Noor',q:'Wie betaalt de herstelling van haar eigen gsm?',
+    opts:['De familiale verzekering','De schoolverzekering','Niemand: eigen schade aan eigen spullen'],a:2,pol:null,sur:false,
+    why:'De familiale betaalt alleen schade die je aan anderen toebrengt. De schoolverzekering dekt lichamelijke ongevallen. Voor je eigen toestel bestaat enkel een aparte toestelverzekering, met vrijstelling en vaak dure premie. Eén van de weinige gaten waar geen klassieke polis voor is.'},
+   {t:'16:20',h:3,where:'Naar huis',place:'Langestraat, Brugge',img:'noor2',amb:'street',fx:{A:['motes'],B:['motes']},
+    face:{A:[.42,.24],B:[.4,.56],O:[.81,.21]},boomAt:[.4,.62],sfx:'crash',word:'BAM!',cost:1980,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.54,.36,.1],[.88,.52,.12]],found:'Gespot: ze fietst met haar ogen op haar gsm.',missed:'Hier: ze kijkt naar haar gsm, niet naar de geparkeerde auto.'},
+    beats:[
+      {n:'Langs de reien naar huis. Gouden licht op de kasseien.',cam:[.5,.45,1.08,4200]},
+      {h:'Eén berichtje. Ik kijk maar even.',cam:'faceA'},
+      {spot:1},
+      {hit:1,n:'Ze knalt tegen de geparkeerde auto van mevrouw De Smet. Deur en spiegel: 1.980 euro.'},
+      {p:'Noor?! Gaat het? En… mijn auto!',who:'Mevrouw De Smet',cam:'faceO'}
+    ],
+    pov:{lines:['Je ligt op de kasseien. Je fiets ligt op jou.','De spiegel hangt aan een draadje.','Mevrouw De Smet buigt over je heen.']},
+    ask:'Mevrouw De Smet',q:'Wie betaalt de schade aan de auto van de leerkracht?',
+    opts:['De autoverzekering (BA) van de leerkracht','De familiale verzekering van Noors ouders','Een fietsverzekering'],a:1,pol:'Familiale verzekering',sur:true,
+    why:'De BA autoverzekering van de leerkracht betaalt alleen schade die zij met haar auto aan anderen veroorzaakt, niet schade aan haar eigen wagen. Noor veroorzaakte de schade als fietser, dus betaalt de familiale van haar ouders. Heeft de leerkracht een omnium, dan kan die eerst betalen en het bedrag daarna terugvorderen bij de familiale.'},
+   {t:'19:00',h:3,where:'Op de zetel',place:'Thuis, woonkamer',img:'noor3',amb:'night',fx:{A:[],B:[]},
+    face:{A:[.53,.27],B:[.51,.27],O:null},boomAt:[.46,.38],sfx:'pings',word:'OEPS!',cost:2500,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.46,.38,.12]],found:'Gespot: ze bewerkt een foto van een klasgenote.',missed:'Hier: ze bewerkt een foto van een klasgenote om te lachen.'},
+    beats:[
+      {n:'Groepschat van 3B. Noor heeft een idee.',cam:[.5,.4,1.1,4000]},
+      {h:'Haha, wacht. Ik bewerk die foto van Emma even.',cam:'faceA'},
+      {spot:1},
+      {hit:1,n:'De foto gaat rond. Overal. Emma komt drie weken niet naar school.'},
+      {p:'Wij eisen een schadevergoeding. Met de therapie erbij: 2.500 euro.',who:'De ouders van Emma',cam:[.5,.4,1.2,2000]}
+    ],
+    pov:{lines:['Je gsm blijft trillen.','Je wist niet dat het zo hard zou gaan.','Je durft het scherm niet meer aan te raken.']},
+    ask:'De ouders van Emma',q:'Wie betaalt deze schadevergoeding?',
+    opts:['Niemand: dit is opzet, en opzet is nooit verzekerd','De familiale verzekering van Noors ouders','Enkel een cyberverzekering'],a:1,pol:'Familiale verzekering',sur:true,
+    why:'Verrassend maar waar: een familiale mag schade die met opzet veroorzaakt wordt pas uitsluiten vanaf 16 jaar (KB van 12 januari 1984). Noor is 14, dus de familiale van haar ouders komt tussen, ook al deed ze het bewust. Een cyberoptie geeft daarbovenop vaak hulp om de beelden te laten verwijderen. Was Noor 16 geweest, dan betaalden de ouders zelf.'},
+   {t:'20:30',h:4,where:'Scouts',place:'Scoutsterrein, Sint-Kruis',img:'noor4',amb:'park',fx:{A:['motes'],B:[]},
+    face:{A:[.46,.22],B:[.31,.66],O:[.56,.42]},boomAt:[.4,.72],sfx:'thud',word:'KNAK!',cost:2140,siren:'ambulance',
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.55,.1,.12],[.3,.32,.12]],found:'Gespot: ze hangt met één hand aan de kabelbaan.',missed:'Hier: ze laat met één hand los.'},
+    beats:[
+      {n:'Avondspel bij de scouts. De kabelbaan hangt tussen twee bomen.',cam:[.5,.45,1.08,4200]},
+      {h:'Kijk! Met één hand!',cam:'faceA'},
+      {spot:1},
+      {hit:1,n:'Ze grijpt mis. Gebroken pols. Spoed, gips, kiné: 2.140 euro.'},
+      {p:'Niet bewegen, Noor. De ambulance komt eraan.',who:'De leiding',cam:'faceO'}
+    ],
+    pov:{lines:['Je ligt in het gras. De kabelbaan zwaait boven je.','Je pols ziet er niet uit zoals een pols.','In de verte: een sirene.']},
+    ask:'De ouders van Noor',q:'Wie betaalt de medische kosten van Noor zelf?',
+    opts:['De familiale verzekering van haar ouders','De ongevallenverzekering van de scouts, aangevuld met de hospitalisatieverzekering','De schoolverzekering'],a:1,pol:'Verzekering jeugdbeweging + hospitalisatie',sur:false,
+    why:'De familiale betaalt nooit je eigen letsels. Jeugdbewegingen verzekeren hun leden voor lichamelijke ongevallen tijdens activiteiten, maar met plafonds en tarieven. Wat het ziekenfonds en die polis niet betalen, vangt een hospitalisatieverzekering van de ouders op.'}
+  ]},
+ {id:'sam',name:'Sam',age:29,tag:'Huurder',blurb:'E-bike, padel, laptop',portrait:['sam0A',.41,.16],
+  moments:[
+   {t:'07:40',h:0,where:'Appartement',place:'Huurappartement, Brugge',img:'sam0',amb:'apt',fx:{A:['motes'],B:['drip']},
+    face:{A:[.41,.13],B:[.31,.15],O:[.72,.175]},boomAt:[.70,.52],sfx:'water',word:'PLONS!',cost:4200,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.70,.52,.13],[.68,.42,.1]],found:'Gespot: de aanvoerslang van de wasmachine.',missed:'Hier: de aanvoerslang van de wasmachine.'},
+    beats:[
+      {n:'Zaterdagochtend. Sam zet koffie. In de badkamer draait de wasmachine.',cam:[.45,.45,1.05,4200]},
+      {h:'Wat is dat voor geluid?',cam:'faceA'},
+      {spot:1},
+      {hit:1,n:'De aanvoerslang is losgeschoten. Twintig minuten water. Het zakt door de vloer, naar beneden.'},
+      {p:'Sam! Mijn plafond komt naar beneden! En mijn kast, mijn tv…',who:'De buur van beneden',cam:'faceO'},
+      {n:'De schade bij de buur: 4.200 euro.',cam:[.5,.55,1.08,3000]}
+    ],
+    pov:{lines:['Je staat in een laag water. In je sokken.','Beneden hoor je iemand vloeken.','Het druppelt nog altijd.']},
+    ask:'De buur van beneden',q:'Welke verzekering van Sam komt hier tussen?',
+    opts:['Zijn familiale verzekering','Zijn brandverzekering als huurder','Geen: dat is voor de gebouwpolis van de VME'],a:1,pol:'Brandverzekering huurder',sur:true,
+    why:'Waterschade die uit Sams appartement komt, hoort bij de brandverzekering, niet bij de familiale. In een appartementsgebouw betaalt de gebouwpolis van de VME vaak eerst het plafond van de buur, maar die verzekeraar kan het bedrag daarna terugvorderen bij Sam. Daarvoor heeft Sam als huurder een brandverzekering nodig met huurdersaansprakelijkheid (schade aan het gehuurde) en verhaal van derden (schade bij de buren, ook aan hun inboedel). Vaak verplicht in het huurcontract, precies om deze reden.'},
+   {t:'12:30',h:1,where:'Padel',place:'Padelclub, Sint-Michiels',img:'sam1',amb:'park',fx:{A:['motes'],B:['motes']},
+    face:{A:[.42,.25],B:[.24,.19],O:[.76,.4]},boomAt:[.8,.5],sfx:'slap',word:'PATS!',cost:620,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.72,.06,.12],[.84,.48,.14]],found:'Gespot: hij slaat de bal over de wand, richting terras.',missed:'Hier: het terras vlak achter de glazen wand.'},
+    beats:[
+      {n:'Middagpauze. Opwarmen voor een potje padel.',cam:[.5,.45,1.08,4000]},
+      {h:'Kijk! Zo hoog kan ik hem slaan!',cam:'faceA'},
+      {spot:1},
+      {hit:1,n:'Over de glazen wand. Recht in het gezicht van een vrouw op het terras.'},
+      {p:'Mijn bril! En mijn lip bloedt… Wie gaat dit betalen?',who:'De vrouw op het terras',cam:'faceO'}
+    ],
+    pov:{lines:['Je hoort haar roepen voor je haar ziet.','Haar bril ligt in twee stukken.','Het hele terras kijkt naar jou.']},
+    ask:'De vrouw op het terras',q:'Wie betaalt haar bril en de hechtingen?',
+    opts:['Niemand: wie naast een padelterrein zit, aanvaardt dat risico','De familiale verzekering van Sam','De verzekering van de padelclub'],a:1,pol:'Familiale verzekering',sur:true,
+    why:'Een bal die tijdens een gewone wedstrijd een medespeler raakt, is meestal geen fout. Maar bewust ballen over de wand slaan richting terras is onvoorzichtig: dat is een fout en Sam is aansprakelijk. Sport in je vrije tijd valt onder de familiale. De clubverzekering dekt doorgaans enkel de eigen letsels van leden.'},
+   {t:'14:00',h:2,where:'Café',place:'Café in de binnenstad',img:'sam2',amb:'cafe',fx:{A:['motes'],B:['motes']},
+    face:{A:[.37,.22],B:[.38,.19],O:[.76,.17]},boomAt:[.39,.88],sfx:'glass',word:'KRAK!',cost:1900,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.72,.25,.15],[.85,.16,.1]],found:'Gespot: een ober met een vol dienblad vlak achter Sam.',missed:'Hier: de ober met het volle dienblad.'},
+    beats:[
+      {n:'Sam werkt in een café, op de laptop van zijn werkgever.',cam:[.5,.45,1.08,4000]},
+      {p:'Pardon, pardon, één seconde…',who:'De ober',cam:'faceO'},
+      {spot:1},
+      {hit:1,n:'De ober struikelt tegen de tafel. Laptop op de grond, bier erover: 1.900 euro.'},
+      {h:'Dat is niet eens mijn laptop.',cam:'faceB'}
+    ],
+    pov:{lines:['Het scherm is zwart. Het blijft zwart.','De ober zegt sorry. Vijf keer.','Maandag moet je dit uitleggen aan je baas.']},
+    ask:'Sams werkgever',q:'Wie draait op voor de laptop van Sams werkgever?',
+    opts:['Sam, via zijn familiale verzekering','De werkgever zelf: het is zijn laptop','De BA uitbating van het café'],a:2,pol:'BA uitbating van de horecazaak',sur:true,
+    why:'De ober maakte de fout, en een werkgever is aansprakelijk voor zijn personeel. De BA uitbating van het café vergoedt dus de laptop. Sams familiale komt niet tussen: Sam deed niets fout. Had Sam de laptop zelf laten vallen, dan draagt zijn werkgever de schade meestal zelf: een werknemer is enkel aansprakelijk bij bedrog, zware fout of een lichte fout die eerder gewoonlijk dan toevallig voorkomt (art. 18 Arbeidsovereenkomstenwet).'},
+   {t:'18:00',h:3,where:'Kelder',place:'Kelderberging, appartementsgebouw',img:'sam3',amb:'apt',fx:{A:['motes'],B:['motes']},
+    face:{A:[.55,.2],B:[.62,.21],O:null},boomAt:[.38,.85],sfx:'metal',word:'WEG!',cost:2800,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.25,.45,.12]],found:'Gespot: het hangslot is opengebroken.',missed:'Hier: het hangslot is opengebroken.'},
+    beats:[
+      {n:'Thuiskomst. De deur van de kelderberging staat op een kier.',cam:[.5,.45,1.08,4000]},
+      {h:'Dat is niet normaal.',cam:'faceA'},
+      {spot:1},
+      {hit:1,n:'Slot opengebroken. De e-bike van 2.800 euro is weg.'},
+      {h:'Nee. Nee nee nee.',cam:'faceB'}
+    ],
+    pov:{lines:['Je staat voor een lege plek.','Alleen het doorgeknipte slot ligt er nog.','Je hebt hem één jaar gehad.']},
+    ask:'Sam',q:'Wie vergoedt de gestolen e-bike?',
+    opts:['Niemand zonder aparte fietsverzekering','Zijn brandverzekering, als de waarborg diefstal erin zit','De familiale verzekering'],a:1,pol:'Brandverzekering (waarborg diefstal)',sur:true,
+    why:'Zit de optionele waarborg diefstal in Sams brandverzekering, dan is inboedel in een afgesloten kelderberging vaak meeverzekerd, ook een fiets, op voorwaarde dat er sporen van inbraak zijn en met een plafond per voorwerp. Zonder die waarborg helpt enkel een fietsverzekering. Op straat gestolen? Dan altijd de fietsverzekering.'},
+   {t:'21:30',h:4,where:'Bezoek',place:'Thuis, met vrienden',img:'sam4',amb:'apt',fx:{A:['motes'],B:[]},
+    face:{A:[.28,.15],B:[.29,.36],O:[.69,.5]},boomAt:[.69,.75],sfx:'thud',word:'AU!',cost:1450,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.65,.88,.16],[.5,.8,.15]],found:'Gespot: de losse mat in de gang.',missed:'Hier: de losse mat in de gang.'},
+    beats:[
+      {n:'Vrienden op bezoek. Het wordt laat.',cam:[.5,.45,1.08,4000]},
+      {p:'Sam, waar is de wc ook alweer?',who:'Lotte',cam:'faceO'},
+      {spot:1},
+      {hit:1,n:'De losse mat schuift weg. Gescheurde enkelband: 1.450 euro en drie weken thuis.'},
+      {p:'Au… mijn enkel. Dat is jouw mat, hé.',who:'Lotte',cam:'faceO'}
+    ],
+    pov:{lines:['Ze zit op de grond en huilt van de pijn.','Iedereen kijkt naar de mat. Dan naar jou.','"Ik moet maandag werken," zegt ze.']},
+    ask:'Lotte',q:'Wie betaalt de schade van Lotte?',
+    opts:['De familiale verzekering van Sam','De brandverzekering van Sam','Niemand: ze is zelf gevallen'],a:0,pol:'Familiale verzekering',sur:true,
+    why:'Wie bezoek ontvangt, moet geen valstrikken laten liggen: een mat die wegschuift in de gang is een fout, en Sam is aansprakelijk. Zijn familiale betaalt de letsels en de schade van Lotte. Zijn brandverzekering bevat wel een waarborg BA gebouw, maar die geldt voor gebreken aan het gebouw zelf (een losse trede, een vallende dakpan), niet voor een mat uit zijn inboedel.'}
+  ]},
+ {id:'lien',name:'Lien',age:41,tag:'Zelfstandige',blurb:'Loodgieter, bestelwagen',portrait:['lien4A',.5,.32],
+  moments:[
+   {t:'07:05',h:0,where:'Oprit',place:'Thuis, vroeg en nat',img:'lien0',amb:'rain',fx:{A:['rain'],B:['rain']},
+    face:{A:[.47,.27],B:[.5,.4],O:null},boomAt:[.5,.75],sfx:'thud',word:'AU!',cost:9000,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.6,.85,.2],[.3,.8,.15]],found:'Gespot: de natte, gladde oprit.',missed:'Hier: de oprit is spiegelglad van de regen.'},
+    beats:[
+      {n:'Lien laadt de bestelwagen. Het heeft de hele nacht geregend.',cam:[.5,.45,1.08,4200]},
+      {h:'Nog die dozen en ik ben weg.',cam:'faceA'},
+      {spot:1},
+      {hit:1,n:'Ze glijdt uit. Gescheurde pees. Zes weken niet werken: 9.000 euro omzet weg.'},
+      {h:'Zes weken? Wie betaalt mijn rekeningen dan?',cam:'faceB'}
+    ],
+    pov:{lines:['Je ligt op de natte oprit, de dozen naast je.','Je probeert op te staan. Het lukt niet.','Je denkt aan de klanten van morgen.']},
+    ask:'Lien',q:'Wie vergoedt het inkomen dat Lien misloopt?',
+    opts:['De arbeidsongevallenverzekering','De verzekering gewaarborgd inkomen','De familiale verzekering'],a:1,pol:'Gewaarborgd inkomen',sur:true,
+    why:'Een arbeidsongevallenverzekering bestaat enkel voor werknemers. Als zelfstandige valt Lien terug op de uitkering van het ziekenfonds, een fractie van haar inkomen. Een verzekering gewaarborgd inkomen vult dat maandelijks aan, bij ongeval én ziekte. Een van de meest vergeten polissen bij zelfstandigen.'},
+   {t:'09:30',h:1,where:'Bij de klant',place:'Nieuwe keuken van een klant',img:'lien1',amb:'apt',fx:{A:['drip'],B:['drip']},
+    face:{A:[.28,.18],B:[.61,.38],O:[.22,.07]},boomAt:[.82,.66],sfx:'water',word:'PLONS!',cost:11500,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.72,.55,.14],[.5,.82,.15]],found:'Gespot: water uit de kast met de boiler die Lien plaatste.',missed:'Hier: het water komt uit de kast met haar boiler.'},
+    beats:[
+      {n:'Drie weken geleden plaatste Lien hier een boiler.',cam:[.5,.45,1.08,4000]},
+      {p:'Lien! Er stroomt water onder mijn nieuwe keuken!',who:'De klant',cam:'faceO'},
+      {spot:1},
+      {hit:1,n:'Een losgekomen koppeling. Parket, kasten, vloerverwarming: 11.500 euro.'},
+      {p:'Dat is jouw installatie. Dit betaal jij.',who:'De klant',cam:'faceO'}
+    ],
+    pov:{lines:['Je ziet het meteen. Jouw koppeling. Jouw werk.','Het parket bolt al op.','De klant zegt niets meer. Dat is erger.']},
+    ask:'De klant',q:'Wie betaalt de waterschade bij de klant?',
+    opts:['De BA uitbating van Lien','De BA na levering van Lien','De brandverzekering van de klant, punt'],a:1,pol:'BA na levering',sur:true,
+    why:'De klassieke BA uitbating dekt schade tijdens de werken. Schade die pas opduikt nadat het werk opgeleverd is, valt onder de BA na levering, en die zit niet automatisch in elke polis. De brandverzekering van de klant betaalt misschien eerst, maar vordert het bedrag daarna terug bij Lien.'},
+   {t:'11:45',h:1,where:'Bouwmarkt',place:'Parking van de bouwmarkt',img:'lien2',amb:'street',fx:{A:['motes'],B:['motes']},
+    face:{A:[.6,.15],B:[.65,.17],O:null},boomAt:[.15,.45],sfx:'metal',word:'WEG!',cost:8200,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.15,.3,.16]],found:'Gespot: al haar gereedschap ligt zichtbaar in de bestelwagen.',missed:'Hier: de bestelwagen vol gereedschap, onbewaakt.'},
+    beats:[
+      {n:'Tien minuutjes naar de bouwmarkt.',cam:[.5,.45,1.08,4000]},
+      {h:'Even snel een koppeling halen.',cam:'faceA'},
+      {spot:1},
+      {hit:1,n:'Bestelwagen opengebroken. Al het gereedschap weg: 8.200 euro.'},
+      {h:'Mijn hele werkjaar lag daarin.',cam:'faceB'}
+    ],
+    pov:{lines:['De laadruimte is leeg.','Vijftien jaar gereedschap verzamelen.','Morgen staan er drie klanten gepland.']},
+    ask:'Lien',q:'Wie vergoedt het gestolen gereedschap?',
+    opts:['De omnium van de bestelwagen','De BA uitbating','Enkel een aparte polis voor gereedschap of goederen in het voertuig'],a:2,pol:'Verzekering gereedschap / goederen in voertuig',sur:true,
+    why:'Een omnium dekt het voertuig, niet wat erin ligt. De BA uitbating dekt schade aan anderen, niet je eigen spullen. Diefstal van gereedschap uit een voertuig vraagt een aparte dekking, vaak als uitbreiding van de brandpolis van de zaak of als alle-risicopolis. Zonder die polis: eigen zak.'},
+   {t:'15:00',h:2,where:'Werf',place:'Renovatie in Assebroek',img:'lien3',amb:'apt',fx:{A:['motes'],B:['motes']},
+    face:{A:[.26,.38],B:[.35,.29],O:[.76,.45]},boomAt:[.65,.75],sfx:'thud',word:'AU!',cost:3800,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.6,.85,.17]],found:'Gespot: de gereedschapskist midden in de gang.',missed:'Hier: haar gereedschapskist staat midden in de doorgang.'},
+    beats:[
+      {n:'Renovatiewerken. De kist staat even in de gang.',cam:[.5,.45,1.08,4000]},
+      {p:'Ik loop even langs, hoor…',who:'De klant',cam:'faceO'},
+      {spot:1},
+      {hit:1,n:'De klant struikelt over de kist. Gebroken pols, drie weken werkonbekwaam: 3.800 euro.'},
+      {p:'Die kist stond daar gisteren niet!',who:'De klant',cam:'faceO'}
+    ],
+    pov:{lines:['Hij zit tegen de muur en houdt zijn pols vast.','Jouw kist. Jouw werf.','Hij kijkt naar jou alsof je het expres deed.']},
+    ask:'De klant',q:'Wie betaalt de schade van de klant?',
+    opts:['De familiale verzekering van Lien','De BA uitbating van Lien','De hospitalisatieverzekering van de klant'],a:1,pol:'BA uitbating',sur:false,
+    why:'Schade aan anderen tijdens het uitoefenen van je beroep: dat is voor de BA uitbating. De familiale komt hier nooit tussen, want beroepsactiviteiten zijn uitgesloten. Wie als zelfstandige denkt "ik heb toch een familiale", staat op de werf dus met lege handen.'},
+   {t:'19:30',h:4,where:'Bureau',place:'Thuisbureau, \'s avonds',img:'lien4',amb:'night',fx:{A:[],B:[]},
+    face:{A:[.5,.3],B:[.46,.36],O:null},boomAt:[.35,.6],sfx:'ping',word:'PFF!',cost:6100,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.35,.62,.18]],found:'Gespot: een mail van een klant die niet wil betalen.',missed:'Hier: die mail. De klant weigert te betalen.'},
+    beats:[
+      {n:'Administratie. Een mail van een klant.',cam:[.5,.45,1.08,4000]},
+      {p:'Uw factuur van 6.100 euro betaal ik niet. Het werk was niet conform.',who:'Mail van de klant',cam:[.5,.45,1.25,2000]},
+      {spot:1},
+      {hit:1,n:'Zonder expert en advocaat ziet Lien dat geld nooit terug.'},
+      {h:'Een advocaat kost meer dan de factuur…',cam:'faceB'}
+    ],
+    pov:{lines:['Je leest de mail nog eens. En nog eens.','6.100 euro. Drie weken werk.','Je weet niet eens waar je moet beginnen.']},
+    ask:'Lien',q:'Wie betaalt expert en advocaat om de factuur te innen?',
+    opts:['De BA uitbating','De rechtsbijstandsverzekering van de zaak','Niemand: dat is ondernemersrisico'],a:1,pol:'Rechtsbijstand onderneming',sur:false,
+    why:'Rechtsbijstand betaalt advocaat, expert en procedurekosten bij geschillen met klanten, leveranciers of de overheid. Kijk wel na of het innen van onbetaalde facturen erin zit: dat is soms een optie. De BA uitbating verdedigt je enkel als iemand jóu aansprakelijk stelt, niet als jij je geld gaat halen.'}
+  ]},
+ {id:'georges',name:'Georges',age:72,tag:'Gepensioneerd',blurb:'Bobby, tuin, kleinkinderen',portrait:['georges3A',.47,.22],
+  moments:[
+   {t:'08:00',h:0,where:'Jaagpad',place:'Jaagpad, kanaal Brugge–Oostende',img:'georges0',amb:'park',fx:{A:['motes'],B:['motes']},
+    face:{A:[.27,.22],B:[.24,.22],O:[.82,.42]},boomAt:[.75,.52],sfx:'crash',word:'WAF!',cost:3100,siren:'ambulance',
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.67,.72,.16],[.77,.4,.12],[.55,.55,.1]],found:'Gespot: Bobby trekt aan de leiband, er komt een fietser aan.',missed:'Hier: Bobby, en de fietser die eraan komt.'},
+    beats:[
+      {n:'Ochtendwandeling met Bobby. Mist boven het kanaal.',cam:[.5,.45,1.08,4200]},
+      {h:'Bobby! Hier! Bobby!',cam:'faceA'},
+      {spot:1},
+      {hit:1,n:'Bobby rukt zich los. Een fietser wijkt uit en valt: hersenschudding, e-bike total loss. 3.100 euro.'},
+      {p:'Uw hond! Kijk naar mijn fiets!',who:'De fietser',cam:'faceO'}
+    ],
+    pov:{lines:['De fietser ligt op het jaagpad.','Bobby kwispelt naast je.','Je knieën trillen. In de verte: een sirene.']},
+    ask:'De fietser',q:'Wie betaalt de schade van de fietser?',
+    opts:['De familiale verzekering van Georges','Niemand: Georges deed zelf niets verkeerd','De fietsverzekering van de fietser'],a:0,pol:'Familiale verzekering',sur:false,
+    why:'Als bewaarder van een dier ben je aansprakelijk voor de schade die het veroorzaakt, ook zonder eigen fout (art. 6.17 van het nieuwe Burgerlijk Wetboek, sinds 2025). De familiale betaalt. Zonder familiale zou Georges de fietser bij blijvende letsels zelf moeten vergoeden.'},
+   {t:'10:30',h:1,where:'Tuin',place:'De tuin van Georges',img:'georges1',amb:'park',fx:{A:['leaves'],B:['leaves']},
+    face:{A:[.36,.17],B:[.21,.6],O:[.47,.32]},boomAt:[.3,.7],sfx:'crash',word:'KRAAK!',cost:7400,siren:'ambulance',
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.3,.75,.16],[.35,.45,.12]],found:'Gespot: hoog op een wankele ladder, alleen.',missed:'Hier: de ladder staat niet stevig, en niemand houdt hem vast.'},
+    beats:[
+      {n:'De kastanje hangt over de oprit van de buren.',cam:[.5,.45,1.08,4200]},
+      {h:'Nog één tak.',cam:'faceA'},
+      {spot:1},
+      {hit:1,n:'De ladder schuift weg. Gebroken heup. Operatie en revalidatie: 7.400 euro.'},
+      {p:'Georges! Niet bewegen, ik bel de ambulance!',who:'De buurvrouw',cam:'faceO'}
+    ],
+    pov:{lines:['De lucht. Takken. Een sirene, ver weg.','Je heup voelt niet meer als jouw heup.','De buurvrouw houdt je hand vast tot ze er zijn.']},
+    ask:'Georges',q:'Wie betaalt zijn ziekenhuis- en revalidatiekosten?',
+    opts:['De familiale verzekering','Het ziekenfonds, aangevuld met de hospitalisatieverzekering','De woningverzekering: het gebeurde thuis'],a:1,pol:'Hospitalisatieverzekering',sur:false,
+    why:'De familiale betaalt nooit je eigen letsels, alleen die van anderen. De woningverzekering dekt het gebouw. Het ziekenfonds betaalt een deel; de hospitalisatieverzekering de rest. Na je 65ste wordt zo\'n polis duur of moeilijk om nog nieuw af te sluiten, dus wie ze heeft, houdt ze best.'},
+   {t:'13:30',h:2,where:'Kleinkinderen',place:'Tuin, met kleinzoon Milan',img:'georges2',amb:'park',fx:{A:['motes'],B:['motes']},
+    face:{A:[.22,.2],B:[.19,.22],O:[.89,.25]},boomAt:[.67,.34],sfx:'glass',word:'RINKEL!',cost:1400,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.7,.25,.2],[.42,.85,.12]],found:'Gespot: voetballen vlak naast de serre van de buren.',missed:'Hier: de serre van de buren, vlak achter het doel.'},
+    beats:[
+      {n:'Kleinzoon Milan (8) is bij opa.',cam:[.5,.45,1.08,4000]},
+      {p:'Opa, kijk hoe hard ik kan schieten!',who:'Milan',cam:[.55,.55,1.6,1600]},
+      {spot:1},
+      {hit:1,n:'Dwars door de serre van de buren. Glas en orchideeën: 1.400 euro.'},
+      {p:'Georges! Mijn serre!',who:'De buurvrouw',cam:'faceO'}
+    ],
+    pov:{lines:['Je ziet het gat in de serre.','Milan huilt achter je.','De buurvrouw komt de tuin in.']},
+    ask:'De buurvrouw',q:'Wiens verzekering betaalt de schade aan de serre?',
+    opts:['Alleen de familiale van Milans ouders','De familiale van Milans ouders óf die van Georges','De woningverzekering van de buren, punt'],a:1,pol:'Familiale (ouders of opa)',sur:true,
+    why:'Ouders zijn aansprakelijk voor hun minderjarig kind, maar wie toezicht houdt, kan ook aangesproken worden. Veel familiale polissen dekken bovendien kinderen die tijdelijk onder jouw toezicht staan. In de praktijk regelen de twee verzekeraars dat onderling. Cruciaal: heeft niemand een familiale, dan betaalt de familie dit zelf.'},
+   {t:'15:30',h:2,where:'Telefoon',place:'Woonkamer, namiddag',img:'georges3',amb:'apt',fx:{A:['motes'],B:['motes']},
+    face:{A:[.47,.2],B:[.43,.33],O:null},boomAt:[.47,.47],sfx:'ring',word:'LEEG!',cost:2900,
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.4,.22,.14]],found:'Gespot: een onbekende beller die zich voordoet als de bank.',missed:'Hier: die telefoon. Geen bank vraagt ooit je codes.'},
+    beats:[
+      {n:'De telefoon gaat. Onbekend nummer.',cam:[.5,.45,1.08,4000]},
+      {p:'Goedemiddag, uw bank. Er is een verdachte betaling. Bevestig even uw code.',who:'"De bank"',cam:'faceA'},
+      {spot:1},
+      {hit:1,n:'Georges leest zijn code voor. Twee uur later: rekening leeg. 2.900 euro.'},
+      {h:'Maar… het was toch de bank?',cam:'faceB'}
+    ],
+    pov:{lines:['Je leest het bedrag drie keer.','Het klónk als de bank.','Je durft het aan niemand te vertellen.']},
+    ask:'Georges',q:'Wie vergoedt het gestolen geld?',
+    opts:['De bank, altijd','Standaard niemand; deels via een cyberoptie op de familiale','De familiale verzekering'],a:1,pol:'Cyberverzekering (optie)',sur:true,
+    why:'Wie zelf zijn code doorgeeft, wordt door de bank vaak als "grof nalatig" beschouwd en krijgt dan niets terug. Een cyberoptie op de familiale vergoedt bij heel wat maatschappijen een deel van online fraude en helpt met de aangifte. De klassieke familiale dekt dit niet: er is geen schade aan een derde.'},
+   {t:'22:00',h:4,where:'Keuken',place:'Thuis, \'s avonds laat',img:'georges4',amb:'night',fx:{A:['motes'],B:['smoke','embers']},
+    face:{A:[.57,.3],B:[.69,.25],O:null},boomAt:[.16,.25],sfx:'fire',word:'BOEM!',cost:14500,fire:1,siren:'brandweer',
+    spot:{q:'Waar loopt het mis? Tik het risico aan.',at:[[.13,.28,.13]],found:'Gespot: de soep staat nog op het vuur.',missed:'Hier: de kookpot op het vuur, en Georges dommelt in.'},
+    beats:[
+      {n:'De soep staat op het vuur. Georges dommelt in voor de tv.',cam:[.5,.45,1.08,4200]},
+      {n:'De pan kookt droog.',cam:[.35,.4,1.5,3000]},
+      {spot:1},
+      {hit:1,n:'Keukenbrand, veel rook. Zijn keuken: 9.000 euro. Roetschade bij de buren: 5.500 euro.'},
+      {p:'Georges! Alles bij ons zit onder het roet!',who:'De buurman',cam:[.5,.45,1.15,2000]}
+    ],
+    pov:{lines:['Je wordt wakker van de rook.','De keuken is oranje. Je handen beven.','Buiten: sirenes. De buren bonzen op de muur.']},
+    ask:'De buurman',q:'Wie betaalt de roetschade bij de buren?',
+    opts:['De familiale verzekering van Georges','De brandverzekering van Georges, waarborg verhaal van derden','De buren zelf, via hun eigen brandverzekering, punt'],a:1,pol:'Brandverzekering (verhaal van derden)',sur:true,
+    why:'Brand die overslaat naar de buren is een klassiek geval van "verhaal van derden", een waarborg die in een Belgische brandverzekering voor een woning standaard zit. De familiale sluit brand die in je eigen woning ontstaat net uit: dat is het terrein van de brandpolis. De buren kunnen eerst hun eigen polis aanspreken, maar die vordert het bedrag daarna terug bij Georges.'}
+  ]}
+];
+
+/* ===================== STATE & UI ===================== */
+const app=document.getElementById('app');
+const AVAIL=new Set(window.OJD_AVAIL||[]);
+const ready=p=>p.moments.every(m=>AVAIL.has(m.img+'A')&&AVAIL.has(m.img+'B'));
+const eur=n=>'€ '+n.toLocaleString('nl-BE');
+let ST={log:[]};
+const total=()=>ST.log.reduce((a,x)=>a+x.cost,0);
+const covered=()=>ST.log.reduce((a,x)=>a+(x.pol?x.cost:0),0);
+
+function stageHTML(){return `<div class="stage" id="stage">
+  <div class="rig" id="rig"><div class="cam" id="cam"><img class="plate" id="pA" alt=""><img class="plate" id="pB" alt=""></div></div>
+  <canvas class="fx" id="fx"></canvas><div class="firelight" id="fire"></div><div class="emerg" id="emerg"></div><div class="vign"></div><div class="grain"></div>
+  <div class="bars t"></div><div class="bars b"></div><div class="flash" id="flash"></div><div class="word" id="word"></div>
+  <div class="spotui" id="spotui"><span class="q" id="spotq"></span><div class="timer"><i id="spott"></i></div></div>
+  <div class="sub" id="sub"></div><div class="tap" id="tap"><i></i>Tik</div>
+  <div class="tcard" id="tc"></div>
+  <button class="mute" id="mute" aria-label="Geluid aan of uit">${muteIcon()}</button></div>`;}
+function bindStage(){S.stage=document.getElementById('stage');S.rig=document.getElementById('rig');S.cam=document.getElementById('cam');S.fx=document.getElementById('fx');S.pA=document.getElementById('pA');S.pB=document.getElementById('pB');FX.setup();
+  const m=document.getElementById('mute');m.onclick=e=>{e.stopPropagation();audioInit();setMute(!AU.muted);m.innerHTML=muteIcon();};
+  S.stage.addEventListener('pointerdown',e=>{audioInit();if(S.onTap)S.onTap(e);});}
+window.addEventListener('resize',()=>{if(S.stage)FX.setup();});
+
+/* wachten op een tik (met "Tik"-hint na een pauze) */
+function tap(hintAfter=900){return new Promise(res=>{const h=setTimeout(()=>document.getElementById('tap')?.classList.add('on'),hintAfter);S.onTap=()=>{clearTimeout(h);document.getElementById('tap')?.classList.remove('on');S.onTap=null;SFX.tap();res();};});}
+/* typemachine; een tik tijdens het typen toont de volledige zin */
+function typeSub(html,text,cls=''){const sub=document.getElementById('sub');sub.innerHTML=`<span class="line ${cls}">${html}<span class="tx"></span></span>`;const el=sub.querySelector('.tx');return new Promise(res=>{let i=0,done=false;const iv=setInterval(()=>{i++;el.textContent=text.slice(0,i);if(i>=text.length){clearInterval(iv);done=true;res();}},22);S.onTap=()=>{if(!done){clearInterval(iv);el.textContent=text;done=true;res();}};});}
+function clearSub(){const s=document.getElementById('sub');if(s)s.innerHTML='';}
+
+function showPlate(which,snap=false){const on=which==='A'?S.pA:S.pB,off=which==='A'?S.pB:S.pA;[on,off].forEach(p=>p.classList.toggle('snap',snap));on.classList.add('on');off.classList.remove('on');}
+function flash(){const f=document.getElementById('flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');}
+function word(w){const el=document.getElementById('word');el.textContent=w;el.classList.remove('go');void el.offsetWidth;el.classList.add('go');}
+function ring(ix,iy,cls){const p=toScreen(ix,iy);const r=document.createElement('div');r.className='ring '+cls;r.style.left=p.x+'px';r.style.top=p.y+'px';S.stage.appendChild(r);setTimeout(()=>r.remove(),cls==='reveal'?2900:950);}
+function toastIn(txt,cls){const t=document.createElement('div');t.className='toastin '+cls;t.textContent=txt;S.stage.appendChild(t);setTimeout(()=>t.remove(),1800);}
+function bumpMeter(){const m=document.getElementById('amt');if(!m)return;const from=total()-ST.lastCost,to=total(),t0=performance.now()+300;m.classList.remove('bump');void m.offsetWidth;m.classList.add('bump');(function f(now){const k=clamp((now-t0)/1100,0,1);m.textContent=eur(Math.round(from+(to-from)*ease.out(k)));if(k<1)requestAnimationFrame(f);})(t0);}
+
+function preload(srcs){return Promise.all(srcs.map(s=>new Promise(r=>{const i=new Image();i.onload=i.onerror=r;i.src=s;})));}
+
+/* ===================== START ===================== */
+function renderStart(){
+  app.innerHTML=`<div class="hero"><div class="eyebrow">Hanze Verzekeringen · Brugge</div><h1>Overleef<br><em>je dag.</em></h1>
+    <p>Eén gewone dag in Brugge. Vijf keer loopt het mis. Spot het risico vóór het gebeurt, en raad wie de rekening betaalt.</p></div>
+    ${stageHTML()}
+    <div class="picks">${PROFILES.map(p=>`<button class="pick${ready(p)?'':' soon'}" data-p="${p.id}" ${ready(p)?'':'disabled'}>${ready(p)?'':'<span class="badge">Binnenkort</span>'}<img src="${ASSET+(AVAIL.has(p.portrait[0])?p.portrait[0]:'noor2A')}.jpg" style="object-position:${p.portrait[1]*100}% ${p.portrait[2]*100}%;transform-origin:${p.portrait[1]*100}% ${p.portrait[2]*100}%" alt=""><span class="ov"></span><span class="nm"><b>${p.name}</b><span>${p.age} · ${p.tag}</span></span></button>`).join('')}</div>
+    <button class="btn hot" id="go" disabled>Kies je personage</button>
+    <p class="fine">Bedragen zijn voorbeeldbedragen. Dekkingen verschillen per maatschappij en polis; dit spel geeft algemene uitleg en is geen advies of aanbod. Speel met geluid aan.</p>`;
+  bindStage();
+  /* trailer: langzame camerabewegingen over de scènes */
+  const reel=['group',...[...AVAIL].filter(x=>x!=='group').sort(()=>Math.random()-.5).slice(0,12)];let k=0;
+  S.pA.src=ASSET+reel[0]+'.jpg';S.pA.onload=()=>showPlate('A');camSet(.5,.35,1.3);camTo(.5,.5,1.02,6500,'lin');
+  const tc=document.getElementById('tc');
+  const cyc=setInterval(()=>{if(!document.getElementById('stage')){clearInterval(cyc);return;}k=(k+1)%reel.length;const nxt=(k%2)?S.pB:S.pA;nxt.src=ASSET+reel[k]+'.jpg';nxt.onload=()=>{showPlate(k%2?'B':'A');const zx=.35+Math.random()*.3;camSet(zx,.35+Math.random()*.3,1.3);camTo(1-zx,.5,1.08,7000,'lin');};},6500);
+  document.getElementById('sub').innerHTML=`<span class="line narr">Tik voor geluid en begin.</span>`;
+  S.onTap=()=>{audioInit();music('theme',.5,2);ambient('street');clearSub();S.onTap=null;};
+  let sel=null;app.querySelectorAll('.pick').forEach(b=>b.onclick=()=>{audioInit();if(!AU.cur)music('theme',.5,2);sel=b.dataset.p;SFX.whoosh();app.querySelectorAll('.pick').forEach(x=>x.classList.toggle('sel',x===b));const g=document.getElementById('go');g.disabled=false;g.textContent=`Speel als ${PROFILES.find(p=>p.id===sel).name} →`;});
+  document.getElementById('go').onclick=()=>{if(!sel)return;clearInterval(cyc);audioInit();SFX.whoosh();ST={p:PROFILES.find(p=>p.id===sel),i:0,log:[],spotted:0};renderPlay();};
+}
+
+/* ===================== SPELEN ===================== */
+function dayHTML(){const p=ST.p,m=p.moments[ST.i];return `<div class="day"><div class="clock"><small>${p.name}, ${p.age} · ${p.tag}</small><b>${m.t}</b></div><div class="meter"><small>Schade vandaag</small><b id="amt">${eur(total())}</b></div></div><div class="track">${p.moments.map((x,k)=>`<i class="${k<ST.i?'done':k===ST.i?'now':''}"></i>`).join('')}</div>`;}
+async function renderPlay(){
+  const m=ST.p.moments[ST.i];
+  app.innerHTML=dayHTML()+stageHTML()+`<div id="panel"></div>`;bindStage();window.scrollTo({top:0,behavior:'smooth'});
+  const A=ASSET+m.img+'A.jpg',B=ASSET+m.img+'B.jpg';
+  const tc=document.getElementById('tc');tc.innerHTML=`<div class="tm">${m.t.split('').map((c,i)=>`<span style="animation-delay:${i*.06}s">${c}</span>`).join('')}</div><div class="pl">${m.place}</div>`;tc.classList.add('on');
+  await Promise.all([preload([A,B]),sleep(1500)]);
+  S.pA.src=A;S.pB.src=B;showPlate('A',true);FX.set(m.fx.A);ambient(m.amb);music('tension',.32,2.5);
+  {const f=m.face.A;camSet(clamp(f[0],.35,.65),clamp(f[1]+.2,.38,.6),1.3);}tc.classList.remove('on');
+  await play(m);
+}
+async function play(m){
+  const face=k=>{const f=m.face[k];return f;};
+  for(const b of m.beats){
+    if(b.cam){if(typeof b.cam==='string'){const f=face(b.cam.slice(4))||face('B')||face('A');camTo(f[0],f[1]+.1,2.1,1300);}else camTo(b.cam[0],b.cam[1],b.cam[2],b.cam[3]||2000);}
+    if(b.n&&!b.hit){duck(.32);await typeSub('',b.n,'narr');await tap();}
+    else if(b.h){duck(.18);await typeSub(`<span class="who hero">${ST.p.name}</span>`,b.h);await tap();duck(.32);}
+    else if(b.p){duck(.18);await typeSub(`<span class="who npc">${b.who||''}</span>`,b.p);await tap();duck(.32);}
+    else if(b.spot){clearSub();await spotRisk(m);}
+    else if(b.hit){await impact(m);await typeSub('',b.n,'narr');await tap();}
+  }
+  clearSub();await pov(m);renderQuiz(m);
+}
+/* NIEUW spelelement: zie jij het risico vóór het gebeurt? */
+function spotRisk(m){return new Promise(async res=>{
+  const ui=document.getElementById('spotui');document.getElementById('spotq').textContent=m.spot.q;
+  await camTo(.5,.5,1,1100);ui.classList.add('on');CAM.hand=.4;
+  const bar=document.getElementById('spott');const dur=8000;const t0=performance.now();let over=false,miss=0;
+  const tick=now=>{if(over)return;const k=clamp((now-t0)/dur,0,1);bar.style.transform=`scaleX(${1-k})`;if(k>=1){end(false);return;}requestAnimationFrame(tick);};requestAnimationFrame(tick);
+  const end=async ok=>{over=true;S.onTap=null;ui.classList.remove('on');CAM.hand=1;const s=m.spot.at[0];
+    if(ok){ST.spotted++;SFX.spot();toastIn('Risico gespot!','ok');await sleep(500);typeSub('',m.spot.found,'narr');}
+    else{ring(s[0],s[1],'reveal');SFX.wrong();await sleep(400);typeSub('',m.spot.missed,'narr');}
+    ST.curSpot=ok;await camTo(s[0],s[1],1.9,1400);await sleep(500);await tap();res();};
+  S.onTap=e=>{const r=S.stage.getBoundingClientRect();const p=toImage(e.clientX-r.left,e.clientY-r.top);
+    const hit=m.spot.at.find(([x,y,rad])=>Math.hypot(x-p.x,(y-p.y)*1.25)<rad);
+    if(hit){ring(p.x,p.y,'ok');end(true);}else{miss++;ring(p.x,p.y,'no');SFX.wrong();if(miss>=3)end(false);}};
+});}
+/* de klap: riser → stilte → cut naar beeld B met flits, schok, geluid, tinnitus */
+async function impact(m){
+  clearSub();S.stage.classList.add('cine');SFX.riser(1.4);duck(.05,1.2);await camTo(m.boomAt[0],m.boomAt[1],1.5,1300,'in');
+  musicStop(.05);await sleep(120);
+  showPlate('B',true);FX.set(m.fx.B);flash();S.stage.classList.add('hitgrade','chroma');CAM.shake=34;camSet(m.boomAt[0],m.boomAt[1],1.18);
+  SFX.boom();if(m.sfx==='pings')SFX.pings(16);else (SFX[m.sfx]||SFX.thud)();if(m.sfx==='glass')FX.burst('glass',m.boomAt[0],m.boomAt[1],50);if(m.sfx==='water')FX.burst('splash',m.boomAt[0],m.boomAt[1],40);if(m.sfx==='crash')FX.burst('spark',m.boomAt[0],m.boomAt[1],30);
+  word(m.word);ST.lastCost=m.cost;ST.log.push({t:m.t,where:m.where,cost:m.cost,pol:m.pol,sur:m.sur,spotted:ST.curSpot});bumpMeter();SFX.cash();
+  S.stage.insertAdjacentHTML('beforeend',`<div class="money">−${eur(m.cost)}</div>`);
+  muffle(true,380);SFX.tinnitus(3.2);
+  setTimeout(()=>{S.stage.classList.remove('chroma');},600);
+  camTo(.5,.5,1.02,2600,'out');await sleep(1700);
+  if(m.siren){siren(m.siren,9);document.getElementById('emerg').classList.add('on');}
+  if(m.fire)document.getElementById('fire').classList.add('on');
+  muffle(false);music('tension',.25,3);S.stage.classList.remove('hitgrade');
+  S.stage.classList.remove('cine');
+}
+/* POV: diep inzoomen op het gezicht, kleur eruit, hartslag, gedachten */
+async function pov(m){
+  const f=m.face.B;S.stage.classList.add('pov','cine');music('emotion',.5,1.5);muffle(true,700);heartbeat(true);
+  await camTo(f[0],f[1]+.04,2.7,2200,'io');
+  S.stage.insertAdjacentHTML('beforeend',`<div class="povlbl">${ST.p.name} · binnenin</div><div class="povtxt" id="povt"></div>`);
+  const el=document.getElementById('povt');
+  for(const line of m.pov.lines){await new Promise(res=>{let i=0,done=false;el.textContent='';const iv=setInterval(()=>{i++;el.textContent=line.slice(0,i);if(i>=line.length){clearInterval(iv);done=true;res();}},34);S.onTap=()=>{if(!done){clearInterval(iv);el.textContent=line;done=true;res();}};});await tap(1400);camTo(f[0],f[1]+.04,CAM.z+.12,2500,'io');}
+  heartbeat(false);muffle(false);document.querySelector('.povlbl')?.remove();el.remove();S.stage.classList.remove('pov','cine');
+  camTo(.5,.5,1.04,1800);music('tension',.22,2);
+}
+function renderQuiz(m){const panel=document.getElementById('panel');panel.className='panel';
+  panel.innerHTML=`<div class="eyebrow">De vraag van ${m.ask.replace(/^De /,'de ')}</div><h2>${m.q}</h2><p class="sit">Schade: <strong>${eur(m.cost)}</strong>. Wat denk jij?</p><div class="choices">${m.opts.map((o,k)=>`<button class="choice" data-k="${k}"><span class="k">${'ABC'[k]}</span>${o}</button>`).join('')}</div><div id="out"></div>`;
+  setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'start'}),150);
+  panel.querySelectorAll('.choice').forEach(b=>b.onclick=()=>answer(m,+b.dataset.k));}
+function answer(m,k){const ok=k===m.a;(ok?SFX.ok:SFX.wrong)();const L=ST.log[ST.log.length-1];L.right=ok;
+  document.querySelectorAll('.choice').forEach((b,j)=>{b.disabled=true;if(j===m.a)b.classList.add('right');else if(j===k)b.classList.add('wrong');});
+  document.getElementById('out').innerHTML=`<div class="outcome ${m.pol?'covered':'none'}"><div class="tag"><span>${m.pol?'Verzekerbaar':'Uit eigen zak'}</span>${m.sur?'<span class="chip">Verrassing</span>':''}<span class="chip">${ok?'Juist':'Fout'} geraden</span></div><p><strong>${m.opts[m.a]}.</strong></p>${m.pol?`<span class="pol">${m.pol}</span>`:''}<div class="why">${m.why}</div></div><button class="btn" id="next">${ST.i<ST.p.moments.length-1?'Verder met de dag →':'Bekijk je dag →'}</button>`;
+  document.getElementById('next').onclick=()=>{SFX.whoosh();ambStop();if(ST.i<ST.p.moments.length-1){ST.i++;renderPlay();}else renderEnd();};
+  setTimeout(()=>document.getElementById('out').scrollIntoView({behavior:'smooth',block:'nearest'}),150);}
+
+/* ===================== EINDE ===================== */
+function renderEnd(){const t=total(),cov=covered(),r=ST.log.filter(x=>x.right).length,n=ST.log.length;
+  app.innerHTML=`<div class="day"><div class="clock"><small>Einde van de dag</small><b>23:30</b></div><div class="meter"><small>Schade vandaag</small><b>${eur(t)}</b></div></div>${stageHTML()}
+  <div class="panel"><div class="eyebrow">${ST.p.name}, ${ST.p.age} · jouw dag</div><h2>${r===n?'Jij weet wie betaalt.':r?'Bijna gedekt.':'Blind door de dag.'}</h2>
+  <div class="totals"><div class="tot"><small>Schade</small><b>${eur(t)}</b></div><div class="tot g"><small>Verzekerbaar</small><b>${eur(cov)}</b></div><div class="tot a"><small>Gespot</small><b>${ST.spotted}/${ST.p.moments.filter(x=>x.spot).length}</b></div></div>
+  <ul class="list">${ST.log.map(x=>`<li class="${x.pol?'covered':'none'}"><span class="t">${x.t}</span><span class="d"><b>${x.where}</b><span>${x.pol||'Geen klassieke dekking'}</span></span><span class="a">${eur(x.cost)}</span></li>`).join('')}</ul>
+  <a class="cta" href="https://www.hanze.be" target="_blank" rel="noopener">Check mijn dekking bij Hanze →</a>
+  <div class="row"><button class="ghost" id="again">Ander personage</button></div></div>`;
+  bindStage();S.pA.src=ASSET+'group.jpg';S.pA.onload=()=>showPlate('A');camSet(.5,.5,1.3);camTo(.5,.5,1.02,9000,'lin');music('finale',.55,2);ambient('night');
+  document.getElementById('again').onclick=()=>{ambStop();music('theme',.5,1.5);renderStart();};}
+
+renderStart();
+</script>
+</body>
+</html>
