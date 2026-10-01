@@ -185,6 +185,16 @@ canvas.fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .list li.covered .a{color:var(--ok)}.list li.none .a{color:var(--warn)}
 .cta{display:block;text-align:center;margin-top:14px;border-radius:14px;padding:15px;font-size:16px;font-weight:800;background:var(--accent);color:#fff;text-decoration:none}
 .row{display:flex;gap:10px;margin-top:10px}
+/* eindscherm: Willem klopt op het scherm en wijst naar de knop */
+#host{position:absolute;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;z-index:4;pointer-events:none;opacity:0;transition:opacity .6s}
+#host.on{opacity:1}
+.stage.endbg .plate{filter:blur(6px) brightness(.38) saturate(.8);transform:scale(1.06)}
+.knockfx{position:absolute;z-index:5;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;pointer-events:none;border:2px solid rgba(255,255,255,.75);box-shadow:0 0 18px rgba(255,255,255,.5),inset 0 0 12px rgba(255,255,255,.4);animation:knock .7s ease-out forwards}
+@keyframes knock{0%{transform:scale(.4);opacity:1}100%{transform:scale(7);opacity:0}}
+.endcta{position:relative;opacity:0;transform:translateY(-14px) scale(.96);transition:opacity .45s,transform .45s cubic-bezier(.34,1.56,.64,1);pointer-events:none}
+.endcta.show{opacity:1;transform:none;pointer-events:auto;animation:ctapulse 1.6s ease-in-out .5s infinite}
+@keyframes ctapulse{0%,100%{box-shadow:0 0 0 0 rgba(255,90,54,.6)}50%{box-shadow:0 0 0 12px rgba(255,90,54,0)}}
+.endcta small{display:block;font-weight:600;font-size:12.5px;opacity:.85;margin-top:3px}
 #gate{position:fixed;inset:0;z-index:50;display:grid;place-items:end center;padding:0 20px 9vh;background:linear-gradient(180deg,rgba(7,9,14,.15) 0%,rgba(7,9,14,.55) 45%,rgba(7,9,14,.97) 78%),url(assets/group.jpg) center 18%/cover no-repeat,var(--bg);transition:opacity .6s,visibility .6s}
 #gate.out{opacity:0;visibility:hidden}
 #gate .in{width:100%;max-width:440px;text-align:center}
@@ -680,12 +690,54 @@ function stageHTML(home=false){return `<div class="stage" id="stage">
   ${home?`<button class="home" id="home" aria-label="Terug naar het begin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Stoppen?</span></button>`:''}
   <button class="mute" id="mute" aria-label="Geluid aan of uit">${muteIcon()}</button></div>`;}
 function bindStage(){S.stage=document.getElementById('stage');S.rig=document.getElementById('rig');S.cam=document.getElementById('cam');S.fx=document.getElementById('fx');S.pA=document.getElementById('pA');S.pB=document.getElementById('pB');FX.setup();
-  const m=document.getElementById('mute');m.onclick=e=>{e.stopPropagation();audioInit();setMute(!AU.muted);m.innerHTML=muteIcon();};
+  const m=document.getElementById('mute');m.onclick=e=>{e.stopPropagation();audioInit();setMute(!AU.muted);if(S.vid)S.vid.muted=AU.muted;m.innerHTML=muteIcon();};
   S.stage.addEventListener('pointerdown',e=>{audioInit();if(S.onTap)S.onTap(e);});
   /* homeknop: eerste tik = 'Stoppen?', tweede tik binnen 3 s = terug naar het begin */
   const h=document.getElementById('home');if(h){let t=null;h.addEventListener('pointerdown',e=>e.stopPropagation());h.onclick=e=>{e.stopPropagation();
     if(!h.classList.contains('armed')){h.classList.add('armed');SFX.tap();t=setTimeout(()=>h.classList.remove('armed'),3000);return;}
     clearTimeout(t);goHome();};}}
+/* ===================== OUTRO: Willem klopt op het scherm =====================
+   willem.mp4 bevat twee beelden boven elkaar: bovenaan de kleur, onderaan een zwart-wit masker
+   (wit = Willem, zwart = weg). WebGL zet het masker om in doorzichtigheid. Zo werkt een
+   "transparante video" in elke browser, ook op iPhone, waar WebM met alpha niet afspeelt. */
+const KNOCKS=[3.7,3.97,4.42],POINT_AT=6.3;
+function hostOutro(){
+  const g=GEN,cta=document.getElementById('endcta');
+  const showCta=()=>{if(g===GEN&&cta)cta.classList.add('show');};
+  S.stage.classList.add('endbg');
+  S.stage.insertAdjacentHTML('beforeend','<canvas id="host" width="540" height="960" aria-label="Willem van Hanze klopt op het scherm en wijst naar de knop"></canvas>');
+  const cv=document.getElementById('host');
+  const gl=cv.getContext('webgl',{premultipliedAlpha:true,alpha:true,antialias:false});
+  if(!gl){showCta();return;}
+  const sh=(type,src)=>{const o=gl.createShader(type);gl.shaderSource(o,src);gl.compileShader(o);return o;};
+  const pr=gl.createProgram();
+  gl.attachShader(pr,sh(gl.VERTEX_SHADER,'attribute vec2 p;varying vec2 uv;void main(){uv=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}'));
+  /* kleur uit de bovenste helft, masker uit de onderste; smoothstep maakt de rand zacht maar strak */
+  gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,'precision mediump float;varying vec2 uv;uniform sampler2D t;void main(){vec3 c=texture2D(t,vec2(uv.x,uv.y*.5)).rgb;float a=texture2D(t,vec2(uv.x,uv.y*.5+.5)).r;a=smoothstep(.1,.9,a);gl_FragColor=vec4(c*a,a);}'));
+  gl.linkProgram(pr);if(!gl.getProgramParameter(pr,gl.LINK_STATUS)){showCta();return;}
+  gl.useProgram(pr);
+  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  const loc=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
+  [gl.TEXTURE_WRAP_S,gl.TEXTURE_WRAP_T].forEach(k=>gl.texParameteri(gl.TEXTURE_2D,k,gl.CLAMP_TO_EDGE));
+  [gl.TEXTURE_MIN_FILTER,gl.TEXTURE_MAG_FILTER].forEach(k=>gl.texParameteri(gl.TEXTURE_2D,k,gl.LINEAR));
+  const v=document.createElement('video');v.src=ASSET+(v.canPlayType('video/mp4; codecs="avc1.640028"')?'willem.mp4':'willem.webm');v.playsInline=true;v.setAttribute('playsinline','');v.preload='auto';v.muted=AU.muted;S.vid=v;
+  let fired=0,pointed=false,started=false;
+  const knock=()=>{CAM.shake=16;const r=S.stage.getBoundingClientRect();const k=document.createElement('div');k.className='knockfx';k.style.left=(r.width*.37)+'px';k.style.top=(r.height*.36)+'px';S.stage.appendChild(k);setTimeout(()=>k.remove(),800);};
+  const loop=()=>{
+    if(g!==GEN||!cv.isConnected){v.pause();return;}
+    if(v.readyState>=2){try{gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,v);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);}catch(e){v.pause();cv.remove();showCta();return;}}
+    const t=v.currentTime;
+    while(fired<KNOCKS.length&&t>=KNOCKS[fired]){knock();fired++;}
+    if(!pointed&&t>=POINT_AT){pointed=true;showCta();}
+    requestAnimationFrame(loop);};
+  const go=()=>{if(started||g!==GEN)return;started=true;cv.classList.add('on');duck(.16,.8);
+    v.play().catch(()=>{v.muted=true;v.play().catch(showCta);});requestAnimationFrame(loop);};
+  v.onended=()=>{duck(.55,2);showCta();S.onTap=()=>{fired=0;v.currentTime=0;duck(.16,.5);v.play().catch(()=>{});};};
+  v.onerror=showCta;
+  v.addEventListener('canplaythrough',()=>setTimeout(go,1400),{once:true});
+  setTimeout(()=>{if(!started)showCta();},9000);
+}
 function goHome(){GEN++;heartbeat(false);muffle(false);ambStop();CAM.hand=1;CAM.shake=0;SFX.whoosh();music('theme',.5,1.5);renderStart();window.scrollTo({top:0});}
 window.addEventListener('resize',()=>{if(S.stage)FX.setup();});
 
@@ -804,12 +856,13 @@ function answer(m,k){const ok=k===m.a;(ok?SFX.ok:SFX.wrong)();const L=ST.log[ST.
 /* ===================== EINDE ===================== */
 function renderEnd(){GEN++;const t=total(),cov=covered(),r=ST.log.filter(x=>x.right).length,n=ST.log.length;
   app.innerHTML=`<div class="day"><div class="clock"><small>Einde van de dag</small><b>23:30</b></div><div class="meter"><small>Schade vandaag</small><b>${eur(t)}</b></div></div>${stageHTML()}
+  <a class="cta endcta" id="endcta" href="https://www.hanze.be/contact" target="_blank" rel="noopener">Check mijn dekking bij Hanze<small>Gratis en vrijblijvend, door een makelaar in Brugge</small></a>
   <div class="panel"><div class="eyebrow">${ST.p.name}, ${ST.p.age} · jouw dag</div><h2>${r===n?'Jij weet wie betaalt.':r?'Bijna gedekt.':'Blind door de dag.'}</h2>
   <div class="totals"><div class="tot"><small>Schade</small><b>${eur(t)}</b></div><div class="tot g"><small>Verzekerbaar</small><b>${eur(cov)}</b></div><div class="tot a"><small>Gespot</small><b>${ST.spotted}/${ST.p.moments.filter(x=>x.spot).length}</b></div></div>
   <ul class="list">${ST.log.map(x=>`<li class="${x.pol?'covered':'none'}"><span class="t">${x.t}</span><span class="d"><b>${x.where}</b><span>${x.pol||'Geen klassieke dekking'}</span></span><span class="a">${eur(x.cost)}</span></li>`).join('')}</ul>
-  <a class="cta" href="https://www.hanze.be" target="_blank" rel="noopener">Check mijn dekking bij Hanze →</a>
   <div class="row"><button class="ghost" id="again">Ander personage</button></div></div>`;
   bindStage();S.pA.src=ASSET+'group.jpg';S.pA.onload=()=>showPlate('A');camSet(.5,.5,1.3);camTo(.5,.5,1.02,9000,'lin');music('finale',.55,2);ambient('night');
+  hostOutro();
   document.getElementById('again').onclick=()=>{ambStop();music('theme',.5,1.5);renderStart();};}
 
 /* Browsers laten pas geluid toe na een eerste tik. Lukt het toch meteen (sommige desktops), dan slaan we het startscherm over. */
